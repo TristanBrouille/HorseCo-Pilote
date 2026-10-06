@@ -1,3 +1,7 @@
+-- ==========================================
+-- 1. REFERENCE TABLES AND USERS
+-- ==========================================
+
 CREATE TABLE "users"
 (
     "id"         SERIAL       NOT NULL,
@@ -20,6 +24,10 @@ CREATE TABLE "member"
     CONSTRAINT "fk_member_user_id" FOREIGN KEY ("user_id")
         REFERENCES "users" ("id") ON DELETE CASCADE
 );
+
+-- ==========================================
+-- 2. HORSES AND LOCATIONS
+-- ==========================================
 
 CREATE TABLE "location"
 (
@@ -44,6 +52,10 @@ CREATE TABLE "horse"
         REFERENCES "location" ("id")
 );
 
+-- ==========================================
+-- 3. YEARLY PLANNING (STRUCTURE STATIQUE)
+-- ==========================================
+
 CREATE TABLE "weekly_slot"
 (
     "id"               SERIAL      NOT NULL,
@@ -58,22 +70,21 @@ CREATE TABLE "weekly_slot"
         REFERENCES "users" ("id")
 );
 
-CREATE TABLE "weekly_slot_assignment"
+-- Inscriptions annuelles des membres au créneau (sans cheval)
+CREATE TABLE "weekly_slot_member"
 (
-    "id"             SERIAL  NOT NULL,
     "weekly_slot_id" INTEGER NOT NULL,
     "user_id"        INTEGER NOT NULL,
-    "horse_id"       INTEGER NULL,
-    CONSTRAINT "pk_weekly_slot_assignment" PRIMARY KEY ("id"),
-    CONSTRAINT "uc_wsa_slot_member" UNIQUE ("weekly_slot_id", "user_id"),
-    CONSTRAINT "uc_wsa_slot_horse" UNIQUE ("weekly_slot_id", "horse_id"),
-    CONSTRAINT "fk_wsa_slot" FOREIGN KEY ("weekly_slot_id")
+    CONSTRAINT "pk_weekly_slot_member" PRIMARY KEY ("weekly_slot_id", "user_id"),
+    CONSTRAINT "fk_wsm_slot" FOREIGN KEY ("weekly_slot_id")
         REFERENCES "weekly_slot" ("id") ON DELETE CASCADE,
-    CONSTRAINT "fk_wsa_member" FOREIGN KEY ("user_id")
-        REFERENCES "member" ("user_id") ON DELETE CASCADE,
-    CONSTRAINT "fk_wsa_horse" FOREIGN KEY ("horse_id")
-        REFERENCES "horse" ("id") ON DELETE SET NULL
+    CONSTRAINT "fk_wsm_member" FOREIGN KEY ("user_id")
+        REFERENCES "member" ("user_id") ON DELETE CASCADE
 );
+
+-- ==========================================
+-- 4. REALIZED SESSIONS & ATTRIBUTION DU CHEVAL
+-- ==========================================
 
 CREATE TABLE "lesson"
 (
@@ -93,19 +104,22 @@ CREATE TABLE "lesson"
         REFERENCES "location" ("id")
 );
 
-CREATE TABLE "lesson_participant"
+-- C'est ici qu'on attribue le cheval au cavalier pour la séance !
+CREATE TABLE "lesson_booking"
 (
     "id"        SERIAL  NOT NULL,
     "lesson_id" INTEGER NOT NULL,
     "user_id"   INTEGER NOT NULL,
-    "horse_id"  INTEGER NULL,
-    CONSTRAINT "pk_lesson_participant" PRIMARY KEY ("id"),
-    CONSTRAINT "uc_lp_lesson_user" UNIQUE ("lesson_id", "user_id"),
-    CONSTRAINT "uc_lp_lesson_horse" UNIQUE ("lesson_id", "horse_id"),
-    CONSTRAINT "fk_lp_lesson" FOREIGN KEY ("lesson_id")
+    "horse_id"  INTEGER NULL, -- NULL tant que le moniteur n'a pas assigné le cheval
+    CONSTRAINT "pk_lesson_booking" PRIMARY KEY ("id"),
+    -- Un cavalier ne participe qu'une fois à la même séance :
+    CONSTRAINT "uc_lb_lesson_user" UNIQUE ("lesson_id", "user_id"),
+    -- Un cheval ne peut pas être monté par 2 personnes sur la même séance :
+    CONSTRAINT "uc_lb_lesson_horse" UNIQUE ("lesson_id", "horse_id"),
+    CONSTRAINT "fk_lb_lesson" FOREIGN KEY ("lesson_id")
         REFERENCES "lesson" ("id") ON DELETE CASCADE,
-    CONSTRAINT "fk_lp_member" FOREIGN KEY ("user_id")
-        REFERENCES "member" ("user_id"),
-    CONSTRAINT "fk_lp_horse" FOREIGN KEY ("horse_id")
-        REFERENCES "horse" ("id"),
+    CONSTRAINT "fk_lb_member" FOREIGN KEY ("user_id")
+        REFERENCES "member" ("user_id") ON DELETE CASCADE,
+    CONSTRAINT "fk_lb_horse" FOREIGN KEY ("horse_id")
+        REFERENCES "horse" ("id") ON DELETE SET NULL
 );
