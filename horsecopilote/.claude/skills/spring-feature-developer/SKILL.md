@@ -77,17 +77,28 @@ Rules for this step:
 - Never guess a point that changes the database schema or a business rule: wait for the answer.
 - If the request is already clear and complete, do not ask unnecessary questions: show a short summary of the assumptions you are making and continue.
 
-### 2. Protect existing JPA entities
+### 2. Create a feature branch
+
+Never implement a feature directly on the default branch. Once the request is clarified, before editing any file:
+
+1. Run `git status`. If there are uncommitted changes unrelated to the feature, tell the user and ask whether to commit, stash or keep them before switching branches. Never discard them.
+2. Update the base branch: check out the default branch (`main` or `master`) and run `git pull` if a remote exists. If the pull fails, report it instead of forcing anything.
+3. Create and switch to a new branch: `git checkout -b feature/<short-kebab-case-name>` (for example `feature/horse-crud`, or `fix/<name>` for a bug fix). Follow the project's naming convention if one exists in existing branches or in `CLAUDE.md`. If the branch already exists, ask the user whether to reuse it or pick another name.
+4. If the user is already on a non-default branch dedicated to this work, stay on it.
+
+Do not commit, push or open a pull request unless the user asks.
+
+### 3. Protect existing JPA entities
 
 Creating new entities is fine. Modifying an existing entity (adding, renaming, removing or retyping a field, changing relationships, constraints or table/column names) changes the database schema and can break production data.
 
 When a feature requires such a change, stop and ask the user for confirmation before editing the entity. Explain exactly which fields change and what migration that implies.
 
-### 3. Verify `.gitignore`
+### 4. Verify `.gitignore`
 
 Make sure these entries are present and add any that are missing: `.env`, `.idea/`, `.vscode/`, `*.iml`, `target/`. This prevents secrets and IDE files from being committed.
 
-### 4. Implement the feature
+### 5. Implement the feature
 
 Follow these conventions in every tier:
 
@@ -107,13 +118,13 @@ Class by class:
 - **Controller** (Presentation tier): HTTP only. Validate with `@Valid` on every `@RequestBody`, convert with the mapper, delegate to one service method per endpoint, convert the result with the mapper and wrap it in a `ResponseEntity`. Status codes: `200` for reads and updates, `201` with a `Location` header for creation, `204` for deletion, `400` and `404` produced by the advice. No `if`, loops, business logic or repository access in controllers.
 - **Dependencies**: if validation is needed and `spring-boot-starter-validation` is missing from `pom.xml`, add it and mention it in the summary.
 
-### 5. Database migrations
+### 6. Database migrations
 
 If Flyway (`src/main/resources/db/migration`) or Liquibase is present, every new entity or confirmed entity change needs a migration script. Use the next free version number and a descriptive name, for example `V7__create_products_table.sql`. Never edit a migration that already exists, since it may already have run in other environments.
 
 If neither tool is present, the project probably relies on `spring.jpa.hibernate.ddl-auto`; do not add a migration tool unless the user asks.
 
-### 6. Verify the architecture
+### 7. Verify the architecture
 
 Re-read every class created or modified and confirm that:
 
@@ -126,7 +137,7 @@ Re-read every class created or modified and confirm that:
 
 Fix any violation before moving on to the tests.
 
-### 7. Write tests
+### 8. Write tests
 
 Cover the new code with:
 
@@ -136,7 +147,7 @@ Cover the new code with:
 
 Use `@SpringBootTest` only when the feature genuinely needs the full context (complex queries, transactional behavior). Use the import paths matching the project's Spring Boot version (see `references/testing-templates.md`).
 
-### 8. Run tests and fix regressions
+### 9. Run tests and fix regressions
 
 Run the full suite with `./mvnw test` (or `mvn test`).
 
@@ -148,11 +159,12 @@ When something fails, read the failure, fix the cause in the production code or 
 
 The feature is not done until the suite is fully green, apart from failures that were already present in the baseline and that the user agreed to leave.
 
-### 9. Summary
+### 10. Summary
 
 Finish with a short summary:
 
 - What the feature does and its endpoints (verb, path, status codes).
+- The git branch the work was done on.
 - Files created, modified and deleted, as three lists, each file tagged with its tier.
 - Any dependency added, migration created, or entity change the user approved.
 - Confirmation that the architecture check passed.
