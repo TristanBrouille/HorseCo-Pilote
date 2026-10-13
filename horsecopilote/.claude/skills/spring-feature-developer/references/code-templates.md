@@ -1,6 +1,6 @@
 # Code Templates
 
-Reference implementation of a complete `Task` feature following the 3-tier architecture described in `SKILL.md`. Adapt package names and layout to the existing project: these templates use a layer-based layout (`entity`, `repository`, `service`, `exception`, `dto`, `mapper`, `controller`) only as an example. Whatever the layout, each class keeps the tier shown in its heading.
+Reference implementation of a complete `Task` feature following the 3-tier architecture described in `SKILL.md`. The `package` lines below use a generic layer-based layout (`entity`, `repository`, `service`, `exception`, `dto`, `mapper`, `controller`) for readability only: in this project, place each class according to the package layout in `SKILL.md`, i.e. `com.epfjava.horsecopilote.task.presentation` (controller, DTOs, mapper), `...task.service` (service), `...task.repository` (entity, repository), `...common.service` (exceptions) and `...common.presentation` (global exception handler). Each class keeps the tier shown in its heading.
 
 ## Contents
 

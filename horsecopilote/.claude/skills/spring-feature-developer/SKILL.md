@@ -34,6 +34,35 @@ Classes annotated `@Service`. All business logic and transactions (`@Transaction
 - **Repositories**: interfaces explicitly annotated `@Repository` that extend `JpaRepository`.
 - **Entities**: JPA classes annotated `@Entity` and `@Table(name = "...")` with an explicit table name.
 
+### Package layout: one package per feature, one sub-package per tier
+
+The tiers are physical packages. Every feature has its own package under the root package, containing exactly three sub-packages named after the tiers:
+
+```
+com.epfjava.horsecopilote
+├── HorsecopiloteApplication.java
+├── common/                      # cross-cutting code, same tier split
+│   ├── presentation/            # GlobalExceptionHandler (@RestControllerAdvice)
+│   ├── service/                 # ResourceNotFoundException, BusinessRuleException
+│   └── config/                  # SecurityConfig and other @Configuration
+├── user/
+│   ├── presentation/            # CoachController, CoachResponseDto, CoachMapper
+│   ├── service/                 # UserService
+│   └── repository/              # User, Role, UserRepository
+└── weeklyslot/
+    ├── presentation/            # WeeklySlotController, WeeklySlotRequestDto, WeeklySlotResponseDto, WeeklySlotMapper
+    ├── service/                 # WeeklySlotService
+    └── repository/              # WeeklySlot, WeeklySlotRepository
+```
+
+- **Feature package**: singular, lowercase, no separator (`horse`, `weeklyslot`, `lesson`, `lessonbooking`).
+- **`presentation/`**: controllers, request/response DTO records and the `@Component` mapper, side by side (no further sub-packages).
+- **`service/`**: `@Service` classes with the business logic. Service-tier exceptions shared by every feature live in `common/service/`.
+- **`repository/`**: `@Entity` classes, the enums they store, and the `@Repository` interfaces.
+- **Cross-feature access** follows the tier rules: a service may call another feature's service (`WeeklySlotService` → `UserService`), a mapper may reuse another feature's mapper (`WeeklySlotMapper` → `CoachMapper`), an entity may reference another feature's entity (`WeeklySlot` → `User`). A service never calls another feature's repository directly; it goes through that feature's service.
+- **Tests** mirror the same packages under `src/test/java` (`weeklyslot/service/WeeklySlotServiceTest`, `weeklyslot/presentation/WeeklySlotControllerTest`...).
+- `common/config/` is not a tier: it only holds Spring configuration (security, CORS...).
+
 ### Dependency rules
 
 - Calls flow in one direction only: Presentation -> Service -> Repository.
@@ -54,7 +83,7 @@ Before changing anything:
 
 1. Read `pom.xml` and note the `java.version`, the Spring Boot version (parent or BOM), and which starters are present (`validation`, `data-jpa`, `flyway`, `liquibase`, `lombok`, test starters). Java 25 requires a recent Spring Boot release; if the declared versions look incompatible, tell the user instead of silently changing them.
 2. Detect the build command: use `./mvnw` if the Maven wrapper exists, otherwise `mvn`.
-3. Look at the existing package layout. If the project is organized by feature (`product/ProductController`, `product/ProductService`) follow that; if it is organized by layer (`controller/`, `service/`, `dto/`) follow that. Matching the existing structure matters more than any template in this skill. Whatever the package layout, the tier rules in the Architecture section still apply.
+3. Use the package layout described above (feature package with `presentation/`, `service/` and `repository/` sub-packages). Put a new class in the feature it belongs to, creating the feature package if needed; shared exceptions and configuration go to `common/`. Never recreate layer-wide packages such as `controller/`, `dto/` or `entity/` at the root. Whatever the package, the tier rules in the Architecture section still apply.
 4. Note existing conventions: how DTOs are mapped, how exceptions are handled, whether a global `@RestControllerAdvice` already exists, whether Lombok is used. Reuse what exists rather than introducing a parallel mechanism, as long as it does not break the Architecture rules.
 5. Run `./mvnw test` (or `mvn test`) once and record the result. If tests already fail before your changes, report which ones to the user and ask whether to proceed. Pre-existing failures are not yours to fix silently, and without a baseline you cannot tell a regression from an old bug.
 
@@ -86,7 +115,7 @@ Never implement a feature directly on the default branch. Once the request is cl
 3. Create and switch to a new branch: `git checkout -b feature/<short-kebab-case-name>` (for example `feature/horse-crud`, or `fix/<name>` for a bug fix). Follow the project's naming convention if one exists in existing branches or in `CLAUDE.md`. If the branch already exists, ask the user whether to reuse it or pick another name.
 4. If the user is already on a non-default branch dedicated to this work, stay on it.
 
-Do not commit, push or open a pull request unless the user asks.
+Do not commit, push or open a pull request unless the user asks. Never add Claude as a co-author of commits: no `Co-Authored-By: Claude …` trailer (nor any other Claude/Anthropic attribution) in commit messages or pull request descriptions.
 
 ### 3. Protect existing JPA entities
 
