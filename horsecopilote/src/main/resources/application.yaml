@@ -2,6 +2,11 @@ spring:
   application:
     name: horsecopilote
 
+  # Profil par defaut en local : "dev" charge aussi les donnees de test (db/dev-data).
+  # En production, definir SPRING_PROFILES_ACTIVE (ex. prod) pour ne jamais les charger.
+  profiles:
+    default: dev
+
   datasource:
     url: jdbc:postgresql://localhost:5433/horsecopilote
     username: horse
