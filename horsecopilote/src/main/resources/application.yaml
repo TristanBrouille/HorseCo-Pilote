@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: horsecopilote
+
+  datasource:
+    url: jdbc:postgresql://localhost:5433/horsecopilote
+    username: horse
+    password: horse
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+app:
+  cors:
+    allowed-origins: "http://localhost:4200"
+
+server:
+  servlet:
+    session:
+      cookie:
+        same-site: lax
+        secure: true
+

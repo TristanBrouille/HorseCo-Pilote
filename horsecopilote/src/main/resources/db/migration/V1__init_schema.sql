@@ -4,7 +4,7 @@
 
 CREATE TABLE "users"
 (
-    "id"         SERIAL       NOT NULL,
+    "id"         BIGINT       NOT NULL,
     "role"       VARCHAR(25)  NOT NULL,
     "last_name"  VARCHAR(100) NOT NULL,
     "first_name" VARCHAR(100) NOT NULL,
@@ -16,7 +16,7 @@ CREATE TABLE "users"
 
 CREATE TABLE "member"
 (
-    "user_id"     INTEGER       NOT NULL,
+    "user_id"     BIGINT       NOT NULL,
     "galop_level" INTEGER       NOT NULL,
     "height_cm"   INTEGER       NOT NULL,
     "weight_kg"   NUMERIC(5, 2) NOT NULL,
@@ -31,7 +31,7 @@ CREATE TABLE "member"
 
 CREATE TABLE "location"
 (
-    "id"   SERIAL       NOT NULL,
+    "id"   BIGINT       NOT NULL,
     "name" VARCHAR(100) NOT NULL,
     CONSTRAINT "pk_location" PRIMARY KEY ("id"),
     CONSTRAINT "uc_location_name" UNIQUE ("name")
@@ -39,8 +39,8 @@ CREATE TABLE "location"
 
 CREATE TABLE "horse"
 (
-    "id"             SERIAL       NOT NULL,
-    "location_id"    INTEGER      NOT NULL,
+    "id"             BIGINT       NOT NULL,
+    "location_id"    BIGINT      NOT NULL,
     "name"           VARCHAR(100) NOT NULL,
     "breed"          VARCHAR(100) NOT NULL,
     "height_cm"      INTEGER      NOT NULL,
@@ -58,8 +58,8 @@ CREATE TABLE "horse"
 
 CREATE TABLE "weekly_slot"
 (
-    "id"               SERIAL      NOT NULL,
-    "instructor_id"    INTEGER     NOT NULL,
+    "id"               BIGINT      NOT NULL,
+    "instructor_id"    BIGINT     NOT NULL,
     "day_of_week"      VARCHAR(15) NOT NULL,
     "start_time"       TIME        NOT NULL,
     "duration_minutes" INTEGER     NOT NULL,
@@ -73,8 +73,8 @@ CREATE TABLE "weekly_slot"
 -- Inscriptions annuelles des membres au créneau (sans cheval)
 CREATE TABLE "weekly_slot_member"
 (
-    "weekly_slot_id" INTEGER NOT NULL,
-    "user_id"        INTEGER NOT NULL,
+    "weekly_slot_id" BIGINT NOT NULL,
+    "user_id"        BIGINT NOT NULL,
     CONSTRAINT "pk_weekly_slot_member" PRIMARY KEY ("weekly_slot_id", "user_id"),
     CONSTRAINT "fk_wsm_slot" FOREIGN KEY ("weekly_slot_id")
         REFERENCES "weekly_slot" ("id") ON DELETE CASCADE,
@@ -88,10 +88,10 @@ CREATE TABLE "weekly_slot_member"
 
 CREATE TABLE "lesson"
 (
-    "id"             SERIAL       NOT NULL,
-    "weekly_slot_id" INTEGER NULL,
-    "instructor_id"  INTEGER      NOT NULL,
-    "location_id"    INTEGER      NOT NULL,
+    "id"             BIGINT       NOT NULL,
+    "weekly_slot_id" BIGINT NULL,
+    "instructor_id"  BIGINT      NOT NULL,
+    "location_id"    BIGINT      NOT NULL,
     "start_datetime" TIMESTAMP    NOT NULL,
     "topic"          VARCHAR(150) NOT NULL,
     "status"         VARCHAR(50)  NOT NULL,
@@ -107,10 +107,10 @@ CREATE TABLE "lesson"
 -- C'est ici qu'on attribue le cheval au cavalier pour la séance !
 CREATE TABLE "lesson_booking"
 (
-    "id"        SERIAL  NOT NULL,
-    "lesson_id" INTEGER NOT NULL,
-    "user_id"   INTEGER NOT NULL,
-    "horse_id"  INTEGER NULL, -- NULL tant que le moniteur n'a pas assigné le cheval
+    "id"        BIGINT  NOT NULL,
+    "lesson_id" BIGINT NOT NULL,
+    "user_id"   BIGINT NOT NULL,
+    "horse_id"  BIGINT NULL, -- NULL tant que le moniteur n'a pas assigné le cheval
     CONSTRAINT "pk_lesson_booking" PRIMARY KEY ("id"),
     -- Un cavalier ne participe qu'une fois à la même séance :
     CONSTRAINT "uc_lb_lesson_user" UNIQUE ("lesson_id", "user_id"),
