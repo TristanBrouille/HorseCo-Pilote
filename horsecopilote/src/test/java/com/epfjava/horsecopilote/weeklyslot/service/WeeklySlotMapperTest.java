@@ -1,9 +1,11 @@
-package com.epfjava.horsecopilote.weeklyslot.presentation;
+package com.epfjava.horsecopilote.weeklyslot.service;
 
-import com.epfjava.horsecopilote.user.presentation.CoachMapper;
+import com.epfjava.horsecopilote.user.service.CoachMapperImpl;
 import com.epfjava.horsecopilote.user.presentation.CoachResponseDto;
 import com.epfjava.horsecopilote.security.repository.Roles;
 import com.epfjava.horsecopilote.security.repository.User;
+import com.epfjava.horsecopilote.weeklyslot.presentation.WeeklySlotRequestDto;
+import com.epfjava.horsecopilote.weeklyslot.presentation.WeeklySlotResponseDto;
 import com.epfjava.horsecopilote.weeklyslot.repository.WeeklySlot;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -15,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class WeeklySlotMapperTest {
 
-    private final WeeklySlotMapper weeklySlotMapper = new WeeklySlotMapper(new CoachMapper());
+    private final WeeklySlotMapper weeklySlotMapper = new WeeklySlotMapperImpl(new CoachMapperImpl());
 
     @Test
     void toEntityBuildsOneHourSlotWithoutInstructor() {

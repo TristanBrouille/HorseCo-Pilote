@@ -1,6 +1,5 @@
 package com.epfjava.horsecopilote.weeklyslot.presentation;
 
-import com.epfjava.horsecopilote.weeklyslot.repository.WeeklySlot;
 import com.epfjava.horsecopilote.weeklyslot.service.WeeklySlotService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -18,44 +17,39 @@ import java.net.URI;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/weekly-slots")
+@RequestMapping("/weekly-slots")
 public class WeeklySlotController {
 
     private final WeeklySlotService weeklySlotService;
-    private final WeeklySlotMapper weeklySlotMapper;
 
-    public WeeklySlotController(WeeklySlotService weeklySlotService, WeeklySlotMapper weeklySlotMapper) {
+    public WeeklySlotController(WeeklySlotService weeklySlotService) {
         this.weeklySlotService = weeklySlotService;
-        this.weeklySlotMapper = weeklySlotMapper;
     }
 
     @PostMapping
     public ResponseEntity<WeeklySlotResponseDto> createSlot(@Valid @RequestBody WeeklySlotRequestDto request) {
-        WeeklySlot createdSlot = weeklySlotService.createSlot(weeklySlotMapper.toEntity(request), request.coachId());
+        WeeklySlotResponseDto createdSlot = weeklySlotService.createSlot(request);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")
-                .buildAndExpand(createdSlot.getId())
+                .buildAndExpand(createdSlot.id())
                 .toUri();
-        return ResponseEntity.created(location).body(weeklySlotMapper.toResponse(createdSlot));
+        return ResponseEntity.created(location).body(createdSlot);
     }
 
     @GetMapping
     public ResponseEntity<List<WeeklySlotResponseDto>> getAllSlots() {
-        return ResponseEntity.ok(weeklySlotService.getAllSlots().stream()
-                .map(weeklySlotMapper::toResponse)
-                .toList());
+        return ResponseEntity.ok(weeklySlotService.getAllSlots());
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<WeeklySlotResponseDto> getSlot(@PathVariable Long id) {
-        return ResponseEntity.ok(weeklySlotMapper.toResponse(weeklySlotService.getSlot(id)));
+        return ResponseEntity.ok(weeklySlotService.getSlot(id));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<WeeklySlotResponseDto> updateSlot(@PathVariable Long id,
                                                             @Valid @RequestBody WeeklySlotRequestDto request) {
-        WeeklySlot updatedSlot = weeklySlotService.updateSlot(id, weeklySlotMapper.toEntity(request), request.coachId());
-        return ResponseEntity.ok(weeklySlotMapper.toResponse(updatedSlot));
+        return ResponseEntity.ok(weeklySlotService.updateSlot(id, request));
     }
 
     @DeleteMapping("/{id}")

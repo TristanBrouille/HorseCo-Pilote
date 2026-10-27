@@ -9,21 +9,17 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/coaches")
+@RequestMapping("/coaches")
 public class CoachController {
 
     private final UserService userService;
-    private final CoachMapper coachMapper;
 
-    public CoachController(UserService userService, CoachMapper coachMapper) {
+    public CoachController(UserService userService) {
         this.userService = userService;
-        this.coachMapper = coachMapper;
     }
 
     @GetMapping
     public ResponseEntity<List<CoachResponseDto>> getCoaches() {
-        return ResponseEntity.ok(userService.getCoaches().stream()
-                .map(coachMapper::toResponse)
-                .toList());
+        return ResponseEntity.ok(userService.getCoaches());
     }
 }

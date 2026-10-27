@@ -1,6 +1,6 @@
 # Code Templates
 
-Reference implementation of a complete `Task` feature following the 3-tier architecture described in `SKILL.md`. The `package` lines below use a generic layer-based layout (`entity`, `repository`, `service`, `exception`, `dto`, `mapper`, `controller`) for readability only: in this project, place each class according to the package layout in `SKILL.md`, i.e. `com.epfjava.horsecopilote.task.presentation` (controller, DTOs, mapper), `...task.service` (service), `...task.repository` (entity, repository), `...common.service` (exceptions) and `...common.presentation` (global exception handler). Each class keeps the tier shown in its heading.
+Reference implementation of a complete `Task` feature following the 3-tier architecture described in `SKILL.md`. The `package` lines below use a generic layer-based layout (`entity`, `repository`, `service`, `exception`, `dto`, `mapper`, `controller`) for readability only: in this project, place each class according to the package layout in `SKILL.md`, i.e. `com.epfjava.horsecopilote.task.presentation` (controller, DTOs), `...task.service` (service, MapStruct mapper), `...task.repository` (entity, repository), `...common.service` (exceptions) and `...common.presentation` (global exception handler). Each class keeps the tier shown in its heading.
 
 ## Contents
 
@@ -9,7 +9,7 @@ Reference implementation of a complete `Task` feature following the 3-tier archi
 3. Exception (Service tier)
 4. Service (Service tier)
 5. DTOs (Presentation tier)
-6. Mapper (Presentation tier)
+6. Mapper (Service tier)
 7. Global exception handler (Presentation tier)
 8. Controller (Presentation tier)
 9. Flyway migration
@@ -146,8 +146,12 @@ Services throw it, so it belongs to the Service tier and must not depend on anyt
 ```java
 package com.example.demo.service;
 
+import com.example.demo.dto.TaskRequestDto;
+import com.example.demo.dto.TaskResponseDto;
+import com.example.demo.dto.TaskUpdateDto;
 import com.example.demo.entity.Task;
 import com.example.demo.exception.ResourceNotFoundException;
+import com.example.demo.mapper.TaskMapper;
 import com.example.demo.repository.TaskRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -159,33 +163,33 @@ import java.util.List;
 public class TaskService {
 
     private final TaskRepository taskRepository;
+    private final TaskMapper taskMapper;
 
-    public TaskService(TaskRepository taskRepository) {
+    public TaskService(TaskRepository taskRepository, TaskMapper taskMapper) {
         this.taskRepository = taskRepository;
+        this.taskMapper = taskMapper;
     }
 
     @Transactional
-    public Task createTask(Task task) {
-        return taskRepository.save(task);
+    public TaskResponseDto createTask(TaskRequestDto request) {
+        return taskMapper.toResponse(taskRepository.save(taskMapper.toEntity(request)));
     }
 
-    public List<Task> getAllTasks() {
-        return taskRepository.findAll();
+    public List<TaskResponseDto> getAllTasks() {
+        return taskRepository.findAll().stream()
+                .map(taskMapper::toResponse)
+                .toList();
     }
 
-    public List<Task> getTasksByStatus(boolean completed) {
-        return taskRepository.findByCompleted(completed);
-    }
-
-    public Task getTask(Long id) {
-        return findTaskOrThrow(id);
+    public TaskResponseDto getTask(Long id) {
+        return taskMapper.toResponse(findTaskOrThrow(id));
     }
 
     @Transactional
-    public Task updateTask(Long id, Task changes) {
+    public TaskResponseDto updateTask(Long id, TaskUpdateDto request) {
         Task task = findTaskOrThrow(id);
-        task.update(changes.getTitle(), changes.getDescription(), changes.isCompleted());
-        return task;
+        task.update(request.title(), request.description(), request.completed());
+        return taskMapper.toResponse(task);
     }
 
     @Transactional
@@ -203,7 +207,7 @@ public class TaskService {
 }
 ```
 
-The service only imports entities, repositories and Service-tier exceptions. `updateTask` receives a non-persisted `Task` built by the mapper, copies its fields onto the managed entity and does not call `save`: inside a transaction, JPA dirty checking persists the change on commit.
+The service takes request DTOs and returns response DTOs: every conversion (list, sort, mapping) is logic and stays here, so the controller only handles HTTP. Entities never leave the service. `updateTask` copies the fields onto the managed entity and does not call `save`: inside a transaction, JPA dirty checking persists the change on commit.
 
 ## 5. DTOs
 
@@ -252,41 +256,46 @@ public record TaskResponseDto(Long id, String title, String description, boolean
 }
 ```
 
-Records only carry data. Conversion lives in the mapper.
+Records only carry data. Conversion lives in the mapper, called by the service.
 
 ## 6. Mapper
 
-**Tier: Presentation**
+**Tier: Service**
 
-`mapper/TaskMapper.java`
+`mapper/TaskMapper.java` (in this project: `task/service/TaskMapper.java`)
 
 ```java
 package com.example.demo.mapper;
 
 import com.example.demo.dto.TaskRequestDto;
 import com.example.demo.dto.TaskResponseDto;
-import com.example.demo.dto.TaskUpdateDto;
 import com.example.demo.entity.Task;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
 
-@Component
-public class TaskMapper {
+@Mapper(componentModel = "spring")
+public interface TaskMapper {
 
-    public Task toEntity(TaskRequestDto request) {
+    default Task toEntity(TaskRequestDto request) {
         return new Task(request.title(), request.description());
     }
 
-    public Task toEntity(TaskUpdateDto request) {
-        return new Task(request.title(), request.description(), request.completed());
-    }
-
-    public TaskResponseDto toResponse(Task task) {
-        return new TaskResponseDto(task.getId(), task.getTitle(), task.getDescription(), task.isCompleted());
-    }
+    TaskResponseDto toResponse(Task task);
 }
 ```
 
-The mapper is the single place where DTOs and entities are converted. It never calls a service or a repository, and it only reads data the service has already loaded.
+MapStruct generates `TaskMapperImpl` at compile time as a Spring bean. `toResponse` is generated from matching names (getters to record components); use `@Mapping(target = "...", source = "...")` when names differ, and `uses = OtherMapper.class` with `injectionStrategy = InjectionStrategy.CONSTRUCTOR` to reuse another mapper for a nested object. Entities without setters are built in a `default` method through their business constructor. The mapper never calls a service or a repository, it only reads data the service has already loaded, and only services call it.
+
+Required in `pom.xml` (MapStruct is not managed by Spring Boot, declare its version):
+
+```xml
+<dependency>
+    <groupId>org.mapstruct</groupId>
+    <artifactId>mapstruct</artifactId>
+    <version>${mapstruct.version}</version>
+</dependency>
+```
+
+and in every `annotationProcessorPaths` of `maven-compiler-plugin`, after Lombok: `org.mapstruct:mapstruct-processor:${mapstruct.version}` and `org.projectlombok:lombok-mapstruct-binding:0.2.0`.
 
 ## 7. Global exception handler
 
@@ -344,8 +353,6 @@ package com.example.demo.controller;
 import com.example.demo.dto.TaskRequestDto;
 import com.example.demo.dto.TaskResponseDto;
 import com.example.demo.dto.TaskUpdateDto;
-import com.example.demo.entity.Task;
-import com.example.demo.mapper.TaskMapper;
 import com.example.demo.service.TaskService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -363,43 +370,38 @@ import java.net.URI;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/tasks")
+@RequestMapping("/tasks")
 public class TaskController {
 
     private final TaskService taskService;
-    private final TaskMapper taskMapper;
 
-    public TaskController(TaskService taskService, TaskMapper taskMapper) {
+    public TaskController(TaskService taskService) {
         this.taskService = taskService;
-        this.taskMapper = taskMapper;
     }
 
     @PostMapping
     public ResponseEntity<TaskResponseDto> createTask(@Valid @RequestBody TaskRequestDto request) {
-        Task createdTask = taskService.createTask(taskMapper.toEntity(request));
+        TaskResponseDto createdTask = taskService.createTask(request);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")
-                .buildAndExpand(createdTask.getId())
+                .buildAndExpand(createdTask.id())
                 .toUri();
-        return ResponseEntity.created(location).body(taskMapper.toResponse(createdTask));
+        return ResponseEntity.created(location).body(createdTask);
     }
 
     @GetMapping
     public ResponseEntity<List<TaskResponseDto>> getAllTasks() {
-        return ResponseEntity.ok(taskService.getAllTasks().stream()
-                .map(taskMapper::toResponse)
-                .toList());
+        return ResponseEntity.ok(taskService.getAllTasks());
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<TaskResponseDto> getTask(@PathVariable Long id) {
-        return ResponseEntity.ok(taskMapper.toResponse(taskService.getTask(id)));
+        return ResponseEntity.ok(taskService.getTask(id));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<TaskResponseDto> updateTask(@PathVariable Long id, @Valid @RequestBody TaskUpdateDto request) {
-        Task updatedTask = taskService.updateTask(id, taskMapper.toEntity(request));
-        return ResponseEntity.ok(taskMapper.toResponse(updatedTask));
+        return ResponseEntity.ok(taskService.updateTask(id, request));
     }
 
     @DeleteMapping("/{id}")
@@ -410,7 +412,7 @@ public class TaskController {
 }
 ```
 
-Each endpoint follows the same sequence: validate, convert with the mapper, call one service method, convert the result with the mapper, return the `ResponseEntity`. Building the `Location` URI is an HTTP concern, so it belongs in the controller. The controller never calls the repository.
+Each endpoint follows the same sequence: validate, call one service method with the request DTO, return its response DTO in a `ResponseEntity`. Building the `Location` URI is an HTTP concern, so it belongs in the controller. The controller never calls a mapper or a repository, and URLs have no `/api` prefix.
 
 ## 9. Flyway migration
 

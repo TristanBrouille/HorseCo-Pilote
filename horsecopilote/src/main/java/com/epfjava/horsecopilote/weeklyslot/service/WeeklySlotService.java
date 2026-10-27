@@ -5,6 +5,8 @@ import com.epfjava.horsecopilote.weeklyslot.repository.WeeklySlot;
 import com.epfjava.horsecopilote.common.service.BusinessRuleException;
 import com.epfjava.horsecopilote.common.service.ResourceNotFoundException;
 import com.epfjava.horsecopilote.weeklyslot.repository.WeeklySlotRepository;
+import com.epfjava.horsecopilote.weeklyslot.presentation.WeeklySlotRequestDto;
+import com.epfjava.horsecopilote.weeklyslot.presentation.WeeklySlotResponseDto;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,36 +23,42 @@ public class WeeklySlotService {
 
     private final WeeklySlotRepository weeklySlotRepository;
     private final UserService userService;
+    private final WeeklySlotMapper weeklySlotMapper;
 
-    public WeeklySlotService(WeeklySlotRepository weeklySlotRepository, UserService userService) {
+    public WeeklySlotService(WeeklySlotRepository weeklySlotRepository, UserService userService,
+                             WeeklySlotMapper weeklySlotMapper) {
         this.weeklySlotRepository = weeklySlotRepository;
         this.userService = userService;
+        this.weeklySlotMapper = weeklySlotMapper;
     }
 
-    public List<WeeklySlot> getAllSlots() {
+    public List<WeeklySlotResponseDto> getAllSlots() {
         return weeklySlotRepository.findAllWithInstructorBy().stream()
                 .sorted(PLANNING_ORDER)
+                .map(weeklySlotMapper::toResponse)
                 .toList();
     }
 
-    public WeeklySlot getSlot(Long id) {
-        return findSlotOrThrow(id);
+    public WeeklySlotResponseDto getSlot(Long id) {
+        return weeklySlotMapper.toResponse(findSlotOrThrow(id));
     }
 
     @Transactional
-    public WeeklySlot createSlot(WeeklySlot slot, Long coachId) {
-        slot.assignInstructor(userService.getCoach(coachId));
+    public WeeklySlotResponseDto createSlot(WeeklySlotRequestDto request) {
+        WeeklySlot slot = weeklySlotMapper.toEntity(request);
+        slot.assignInstructor(userService.getCoach(request.coachId()));
         checkCoachIsFree(slot, null);
-        return weeklySlotRepository.save(slot);
+        return weeklySlotMapper.toResponse(weeklySlotRepository.save(slot));
     }
 
     @Transactional
-    public WeeklySlot updateSlot(Long id, WeeklySlot changes, Long coachId) {
+    public WeeklySlotResponseDto updateSlot(Long id, WeeklySlotRequestDto request) {
         WeeklySlot slot = findSlotOrThrow(id);
-        changes.assignInstructor(userService.getCoach(coachId));
+        WeeklySlot changes = weeklySlotMapper.toEntity(request);
+        changes.assignInstructor(userService.getCoach(request.coachId()));
         checkCoachIsFree(changes, id);
         slot.update(changes);
-        return slot;
+        return weeklySlotMapper.toResponse(slot);
     }
 
     @Transactional

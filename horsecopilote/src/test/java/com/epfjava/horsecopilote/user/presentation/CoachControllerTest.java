@@ -2,8 +2,6 @@ package com.epfjava.horsecopilote.user.presentation;
 
 import com.epfjava.horsecopilote.security.infrastructure.SecurityConfig;
 import com.epfjava.horsecopilote.security.repository.CustomUserDetailsService;
-import com.epfjava.horsecopilote.security.repository.Roles;
-import com.epfjava.horsecopilote.security.repository.User;
 import com.epfjava.horsecopilote.user.service.UserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +20,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(CoachController.class)
-@Import({CoachMapper.class, SecurityConfig.class})
+@Import(SecurityConfig.class)
 @WithMockUser
 class CoachControllerTest {
 
@@ -36,11 +34,11 @@ class CoachControllerTest {
     private UserService userService;
 
     @Test
-    void getCoachesReturnsNamesWithoutCredentials() throws Exception {
+    void getCoachesReturnsCoachList() throws Exception {
         when(userService.getCoaches()).thenReturn(List.of(
-                new User(null, Roles.COACH, "Durand", "Claire", "claire@example.com", "secret")));
+                new CoachResponseDto(2L, "Claire", "Durand")));
 
-        mockMvc.perform(get("/api/coaches"))
+        mockMvc.perform(get("/coaches"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].firstName").value("Claire"))

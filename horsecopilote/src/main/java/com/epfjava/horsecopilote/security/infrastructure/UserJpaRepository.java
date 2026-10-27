@@ -24,14 +24,28 @@ public interface UserJpaRepository extends JpaRepository<User, Long>, UserReposi
 
     List<User> findByRoleIn(List<Roles> roles);
 
+    Optional<User> findByIdAndRole(Long id, Roles role);
+
+    List<User> findByRoleOrderByLastNameAscFirstNameAsc(Roles role);
+
     @Override
     default User ofEmail(String email){
         return findByEmail(email);
     }
-    
+
     @Override
     default Optional<User> ofId(Long id) {
         return findById(id);
+    }
+
+    @Override
+    default Optional<User> ofIdAndRole(Long id, Roles role) {
+        return findByIdAndRole(id, role);
+    }
+
+    @Override
+    default List<User> ofRoleSortedByName(Roles role) {
+        return findByRoleOrderByLastNameAscFirstNameAsc(role);
     }
 
     @Override
