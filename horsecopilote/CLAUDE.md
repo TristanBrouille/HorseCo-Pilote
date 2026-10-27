@@ -213,6 +213,7 @@ Format des issues : user stories « ETQ <rôle> je veux … ».
 - Même nom de branche et même message de commit dans les deux dépôts, pour pouvoir les relier.
 - Ne jamais commiter sur `main` : créer la branche dans les deux dépôts d'abord.
 - Ne pas pousser sans demande explicite ; quand c'est demandé, pousser les deux.
+- Ne jamais ajouter de ligne `Co-Authored-By` ni aucune mention de Claude (ou « Generated with Claude Code ») dans les messages de commit, les PR et les commentaires de review.
 
 ## 12. Points encore ouverts
 
