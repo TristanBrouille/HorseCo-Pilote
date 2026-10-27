@@ -1,14 +1,16 @@
 package com.epfjava.horsecopilote.user.presentation;
 
-import com.epfjava.horsecopilote.common.config.SecurityConfig;
-import com.epfjava.horsecopilote.user.repository.Role;
-import com.epfjava.horsecopilote.user.repository.User;
+import com.epfjava.horsecopilote.security.infrastructure.SecurityConfig;
+import com.epfjava.horsecopilote.security.repository.CustomUserDetailsService;
+import com.epfjava.horsecopilote.security.repository.Roles;
+import com.epfjava.horsecopilote.security.repository.User;
 import com.epfjava.horsecopilote.user.service.UserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
@@ -21,7 +23,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(CoachController.class)
 @Import({CoachMapper.class, SecurityConfig.class})
+@WithMockUser
 class CoachControllerTest {
+
+    @MockitoBean
+    private CustomUserDetailsService userDetailsService;
 
     @Autowired
     private MockMvc mockMvc;
@@ -32,7 +38,7 @@ class CoachControllerTest {
     @Test
     void getCoachesReturnsNamesWithoutCredentials() throws Exception {
         when(userService.getCoaches()).thenReturn(List.of(
-                new User(Role.COACH, "Durand", "Claire", "claire@example.com", "secret")));
+                new User(null, Roles.COACH, "Durand", "Claire", "claire@example.com", "secret")));
 
         mockMvc.perform(get("/api/coaches"))
                 .andExpect(status().isOk())

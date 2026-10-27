@@ -1,7 +1,7 @@
 package com.epfjava.horsecopilote.user.service;
 
-import com.epfjava.horsecopilote.user.repository.Role;
-import com.epfjava.horsecopilote.user.repository.User;
+import com.epfjava.horsecopilote.security.repository.Roles;
+import com.epfjava.horsecopilote.security.repository.User;
 import com.epfjava.horsecopilote.common.service.ResourceNotFoundException;
 import com.epfjava.horsecopilote.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
@@ -20,11 +20,11 @@ public class UserService {
     }
 
     public List<User> getCoaches() {
-        return userRepository.findByRoleOrderByLastNameAscFirstNameAsc(Role.COACH);
+        return userRepository.findByRoleOrderByLastNameAscFirstNameAsc(Roles.COACH);
     }
 
-    public User getCoach(Integer id) {
-        return userRepository.findByIdAndRole(id, Role.COACH)
+    public User getCoach(Long id) {
+        return userRepository.findByIdAndRole(id, Roles.COACH)
                 .orElseThrow(() -> new ResourceNotFoundException("Coach", id));
     }
 }

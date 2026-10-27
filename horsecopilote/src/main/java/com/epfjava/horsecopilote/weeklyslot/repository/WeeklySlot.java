@@ -1,6 +1,6 @@
 package com.epfjava.horsecopilote.weeklyslot.repository;
 
-import com.epfjava.horsecopilote.user.repository.User;
+import com.epfjava.horsecopilote.security.repository.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -30,7 +30,7 @@ public class WeeklySlot {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "instructor_id", nullable = false)

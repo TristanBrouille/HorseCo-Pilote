@@ -1,8 +1,9 @@
 package com.epfjava.horsecopilote.weeklyslot.presentation;
 
-import com.epfjava.horsecopilote.common.config.SecurityConfig;
-import com.epfjava.horsecopilote.user.repository.Role;
-import com.epfjava.horsecopilote.user.repository.User;
+import com.epfjava.horsecopilote.security.infrastructure.SecurityConfig;
+import com.epfjava.horsecopilote.security.repository.CustomUserDetailsService;
+import com.epfjava.horsecopilote.security.repository.Roles;
+import com.epfjava.horsecopilote.security.repository.User;
 import com.epfjava.horsecopilote.weeklyslot.repository.WeeklySlot;
 import com.epfjava.horsecopilote.common.service.BusinessRuleException;
 import com.epfjava.horsecopilote.common.service.ResourceNotFoundException;
@@ -14,6 +15,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -39,7 +41,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(WeeklySlotController.class)
 @Import({WeeklySlotMapper.class, CoachMapper.class, SecurityConfig.class})
+@WithMockUser
 class WeeklySlotControllerTest {
+
+    @MockitoBean
+    private CustomUserDetailsService userDetailsService;
 
     private static final String VALID_REQUEST = """
             {"coachId": 7, "dayOfWeek": "MONDAY", "startTime": "18:00", "maxCapacity": 12, "requiredLevel": 3}
@@ -53,7 +59,7 @@ class WeeklySlotControllerTest {
 
     @Test
     void createSlotReturns201WithLocation() throws Exception {
-        when(weeklySlotService.createSlot(any(WeeklySlot.class), eq(7))).thenReturn(slotWithId(1));
+        when(weeklySlotService.createSlot(any(WeeklySlot.class), eq(7L))).thenReturn(slotWithId(1L));
 
         mockMvc.perform(post("/api/weekly-slots").contentType(MediaType.APPLICATION_JSON).content(VALID_REQUEST))
                 .andExpect(status().isCreated())
@@ -70,7 +76,7 @@ class WeeklySlotControllerTest {
                         {"coachId": 7, "dayOfWeek": "MONDAY", "startTime": "18:00", "maxCapacity": 13, "requiredLevel": 3}
                         """))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.errors.maxCapacity").exists());
+                .andExpect(jsonPath("$.maxCapacity").exists());
 
         verify(weeklySlotService, never()).createSlot(any(), any());
     }
@@ -81,14 +87,14 @@ class WeeklySlotControllerTest {
                         {"coachId": 7, "dayOfWeek": "MONDAY", "startTime": "18:15", "maxCapacity": 12, "requiredLevel": 3}
                         """))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.errors.startTimeOnHalfHour").exists());
+                .andExpect(jsonPath("$.startTimeOnHalfHour").exists());
 
         verify(weeklySlotService, never()).createSlot(any(), any());
     }
 
     @Test
     void createSlotAcceptsStartTimeOnHalfHour() throws Exception {
-        when(weeklySlotService.createSlot(any(WeeklySlot.class), eq(7))).thenReturn(slotWithId(1));
+        when(weeklySlotService.createSlot(any(WeeklySlot.class), eq(7L))).thenReturn(slotWithId(1L));
 
         mockMvc.perform(post("/api/weekly-slots").contentType(MediaType.APPLICATION_JSON).content("""
                         {"coachId": 7, "dayOfWeek": "MONDAY", "startTime": "18:30", "maxCapacity": 12, "requiredLevel": 3}
@@ -98,7 +104,7 @@ class WeeklySlotControllerTest {
 
     @Test
     void createSlotReturns409WhenCoachIsBusy() throws Exception {
-        when(weeklySlotService.createSlot(any(WeeklySlot.class), eq(7)))
+        when(weeklySlotService.createSlot(any(WeeklySlot.class), eq(7L)))
                 .thenThrow(new BusinessRuleException("Coach already has a slot overlapping MONDAY 18:00"));
 
         mockMvc.perform(post("/api/weekly-slots").contentType(MediaType.APPLICATION_JSON).content(VALID_REQUEST))
@@ -107,7 +113,7 @@ class WeeklySlotControllerTest {
 
     @Test
     void getAllSlotsReturns200() throws Exception {
-        when(weeklySlotService.getAllSlots()).thenReturn(List.of(slotWithId(1), slotWithId(2)));
+        when(weeklySlotService.getAllSlots()).thenReturn(List.of(slotWithId(1L), slotWithId(2L)));
 
         mockMvc.perform(get("/api/weekly-slots"))
                 .andExpect(status().isOk())
@@ -116,7 +122,7 @@ class WeeklySlotControllerTest {
 
     @Test
     void getSlotReturns404WhenSlotDoesNotExist() throws Exception {
-        when(weeklySlotService.getSlot(99)).thenThrow(new ResourceNotFoundException("Weekly slot", 99));
+        when(weeklySlotService.getSlot(99L)).thenThrow(new ResourceNotFoundException("Weekly slot", 99L));
 
         mockMvc.perform(get("/api/weekly-slots/99"))
                 .andExpect(status().isNotFound())
@@ -125,7 +131,7 @@ class WeeklySlotControllerTest {
 
     @Test
     void updateSlotReturns200() throws Exception {
-        when(weeklySlotService.updateSlot(eq(1), any(WeeklySlot.class), eq(7))).thenReturn(slotWithId(1));
+        when(weeklySlotService.updateSlot(eq(1L), any(WeeklySlot.class), eq(7L))).thenReturn(slotWithId(1L));
 
         mockMvc.perform(put("/api/weekly-slots/1").contentType(MediaType.APPLICATION_JSON).content(VALID_REQUEST))
                 .andExpect(status().isOk())
@@ -137,20 +143,20 @@ class WeeklySlotControllerTest {
         mockMvc.perform(delete("/api/weekly-slots/1"))
                 .andExpect(status().isNoContent());
 
-        verify(weeklySlotService).deleteSlot(1);
+        verify(weeklySlotService).deleteSlot(1L);
     }
 
     @Test
     void deleteSlotReturns404WhenSlotDoesNotExist() throws Exception {
-        doThrow(new ResourceNotFoundException("Weekly slot", 99)).when(weeklySlotService).deleteSlot(99);
+        doThrow(new ResourceNotFoundException("Weekly slot", 99L)).when(weeklySlotService).deleteSlot(99L);
 
         mockMvc.perform(delete("/api/weekly-slots/99"))
                 .andExpect(status().isNotFound());
     }
 
-    private WeeklySlot slotWithId(Integer id) {
-        User coach = new User(Role.COACH, "Durand", "Claire", "claire@example.com", "secret");
-        ReflectionTestUtils.setField(coach, "id", 7);
+    private WeeklySlot slotWithId(Long id) {
+        User coach = new User(null, Roles.COACH, "Durand", "Claire", "claire@example.com", "secret");
+        ReflectionTestUtils.setField(coach, "id", 7L);
         WeeklySlot slot = new WeeklySlot(DayOfWeek.MONDAY, LocalTime.of(18, 0), 12, 3);
         slot.assignInstructor(coach);
         ReflectionTestUtils.setField(slot, "id", id);

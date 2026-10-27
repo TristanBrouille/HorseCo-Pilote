@@ -1,7 +1,7 @@
 package com.epfjava.horsecopilote.user.service;
 
-import com.epfjava.horsecopilote.user.repository.Role;
-import com.epfjava.horsecopilote.user.repository.User;
+import com.epfjava.horsecopilote.security.repository.Roles;
+import com.epfjava.horsecopilote.security.repository.User;
 import com.epfjava.horsecopilote.common.service.ResourceNotFoundException;
 import com.epfjava.horsecopilote.user.repository.UserRepository;
 import org.junit.jupiter.api.Test;
@@ -27,17 +27,17 @@ class UserServiceTest {
 
     @Test
     void getCoachReturnsUserWithCoachRole() {
-        User coach = new User(Role.COACH, "Durand", "Claire", "claire@example.com", "secret");
-        when(userRepository.findByIdAndRole(7, Role.COACH)).thenReturn(Optional.of(coach));
+        User coach = new User(null, Roles.COACH, "Durand", "Claire", "claire@example.com", "secret");
+        when(userRepository.findByIdAndRole(7L, Roles.COACH)).thenReturn(Optional.of(coach));
 
-        assertThat(userService.getCoach(7)).isSameAs(coach);
+        assertThat(userService.getCoach(7L)).isSameAs(coach);
     }
 
     @Test
     void getCoachThrowsWhenUserIsNotACoach() {
-        when(userRepository.findByIdAndRole(3, Role.COACH)).thenReturn(Optional.empty());
+        when(userRepository.findByIdAndRole(3L, Roles.COACH)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> userService.getCoach(3))
+        assertThatThrownBy(() -> userService.getCoach(3L))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Coach with id 3 not found");
     }

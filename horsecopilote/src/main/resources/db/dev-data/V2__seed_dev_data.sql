@@ -10,14 +10,14 @@ VALUES (1, 'ADMIN', 'Bernard', 'Julie', 'admin@horseco.test', '$2a$10$GRLdNijSQM
        (2, 'COACH', 'Durand', 'Claire', 'claire.durand@horseco.test', '$2a$10$GRLdNijSQMUvl/au9ofL.eDwmoohzzS7.rmNSJZ.0FxO/BTk76klW'),
        (3, 'COACH', 'Lefèvre', 'Marc', 'marc.lefevre@horseco.test', '$2a$10$GRLdNijSQMUvl/au9ofL.eDwmoohzzS7.rmNSJZ.0FxO/BTk76klW'),
        (4, 'COACH', 'Martin', 'Sophie', 'sophie.martin@horseco.test', '$2a$10$GRLdNijSQMUvl/au9ofL.eDwmoohzzS7.rmNSJZ.0FxO/BTk76klW'),
-       (5, 'MEMBER', 'Petit', 'Léa', 'lea.petit@horseco.test', '$2a$10$GRLdNijSQMUvl/au9ofL.eDwmoohzzS7.rmNSJZ.0FxO/BTk76klW'),
-       (6, 'MEMBER', 'Roux', 'Hugo', 'hugo.roux@horseco.test', '$2a$10$GRLdNijSQMUvl/au9ofL.eDwmoohzzS7.rmNSJZ.0FxO/BTk76klW'),
-       (7, 'MEMBER', 'Moreau', 'Chloé', 'chloe.moreau@horseco.test', '$2a$10$GRLdNijSQMUvl/au9ofL.eDwmoohzzS7.rmNSJZ.0FxO/BTk76klW'),
-       (8, 'MEMBER', 'Fournier', 'Tom', 'tom.fournier@horseco.test', '$2a$10$GRLdNijSQMUvl/au9ofL.eDwmoohzzS7.rmNSJZ.0FxO/BTk76klW'),
-       (9, 'MEMBER', 'Girard', 'Emma', 'emma.girard@horseco.test', '$2a$10$GRLdNijSQMUvl/au9ofL.eDwmoohzzS7.rmNSJZ.0FxO/BTk76klW'),
-       (10, 'MEMBER', 'Bonnet', 'Lucas', 'lucas.bonnet@horseco.test', '$2a$10$GRLdNijSQMUvl/au9ofL.eDwmoohzzS7.rmNSJZ.0FxO/BTk76klW'),
-       (11, 'MEMBER', 'Lambert', 'Inès', 'ines.lambert@horseco.test', '$2a$10$GRLdNijSQMUvl/au9ofL.eDwmoohzzS7.rmNSJZ.0FxO/BTk76klW'),
-       (12, 'MEMBER', 'Fontaine', 'Nathan', 'nathan.fontaine@horseco.test', '$2a$10$GRLdNijSQMUvl/au9ofL.eDwmoohzzS7.rmNSJZ.0FxO/BTk76klW');
+       (5, 'MEMBRE', 'Petit', 'Léa', 'lea.petit@horseco.test', '$2a$10$GRLdNijSQMUvl/au9ofL.eDwmoohzzS7.rmNSJZ.0FxO/BTk76klW'),
+       (6, 'MEMBRE', 'Roux', 'Hugo', 'hugo.roux@horseco.test', '$2a$10$GRLdNijSQMUvl/au9ofL.eDwmoohzzS7.rmNSJZ.0FxO/BTk76klW'),
+       (7, 'MEMBRE', 'Moreau', 'Chloé', 'chloe.moreau@horseco.test', '$2a$10$GRLdNijSQMUvl/au9ofL.eDwmoohzzS7.rmNSJZ.0FxO/BTk76klW'),
+       (8, 'MEMBRE', 'Fournier', 'Tom', 'tom.fournier@horseco.test', '$2a$10$GRLdNijSQMUvl/au9ofL.eDwmoohzzS7.rmNSJZ.0FxO/BTk76klW'),
+       (9, 'MEMBRE', 'Girard', 'Emma', 'emma.girard@horseco.test', '$2a$10$GRLdNijSQMUvl/au9ofL.eDwmoohzzS7.rmNSJZ.0FxO/BTk76klW'),
+       (10, 'MEMBRE', 'Bonnet', 'Lucas', 'lucas.bonnet@horseco.test', '$2a$10$GRLdNijSQMUvl/au9ofL.eDwmoohzzS7.rmNSJZ.0FxO/BTk76klW'),
+       (11, 'MEMBRE', 'Lambert', 'Inès', 'ines.lambert@horseco.test', '$2a$10$GRLdNijSQMUvl/au9ofL.eDwmoohzzS7.rmNSJZ.0FxO/BTk76klW'),
+       (12, 'MEMBRE', 'Fontaine', 'Nathan', 'nathan.fontaine@horseco.test', '$2a$10$GRLdNijSQMUvl/au9ofL.eDwmoohzzS7.rmNSJZ.0FxO/BTk76klW');
 
 -- ---------- Membres : galops 1 a 7 ----------
 INSERT INTO "member" ("user_id", "galop_level", "height_cm", "weight_kg")

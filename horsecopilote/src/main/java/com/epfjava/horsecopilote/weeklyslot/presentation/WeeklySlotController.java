@@ -47,19 +47,19 @@ public class WeeklySlotController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<WeeklySlotResponseDto> getSlot(@PathVariable Integer id) {
+    public ResponseEntity<WeeklySlotResponseDto> getSlot(@PathVariable Long id) {
         return ResponseEntity.ok(weeklySlotMapper.toResponse(weeklySlotService.getSlot(id)));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<WeeklySlotResponseDto> updateSlot(@PathVariable Integer id,
+    public ResponseEntity<WeeklySlotResponseDto> updateSlot(@PathVariable Long id,
                                                             @Valid @RequestBody WeeklySlotRequestDto request) {
         WeeklySlot updatedSlot = weeklySlotService.updateSlot(id, weeklySlotMapper.toEntity(request), request.coachId());
         return ResponseEntity.ok(weeklySlotMapper.toResponse(updatedSlot));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteSlot(@PathVariable Integer id) {
+    public ResponseEntity<Void> deleteSlot(@PathVariable Long id) {
         weeklySlotService.deleteSlot(id);
         return ResponseEntity.noContent().build();
     }

@@ -2,8 +2,8 @@ package com.epfjava.horsecopilote.weeklyslot.presentation;
 
 import com.epfjava.horsecopilote.user.presentation.CoachMapper;
 import com.epfjava.horsecopilote.user.presentation.CoachResponseDto;
-import com.epfjava.horsecopilote.user.repository.Role;
-import com.epfjava.horsecopilote.user.repository.User;
+import com.epfjava.horsecopilote.security.repository.Roles;
+import com.epfjava.horsecopilote.security.repository.User;
 import com.epfjava.horsecopilote.weeklyslot.repository.WeeklySlot;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -20,7 +20,7 @@ class WeeklySlotMapperTest {
     @Test
     void toEntityBuildsOneHourSlotWithoutInstructor() {
         WeeklySlot slot = weeklySlotMapper.toEntity(
-                new WeeklySlotRequestDto(7, DayOfWeek.TUESDAY, LocalTime.of(17, 0), 10, 2));
+                new WeeklySlotRequestDto(7L, DayOfWeek.TUESDAY, LocalTime.of(17, 0), 10, 2));
 
         assertThat(slot.getId()).isNull();
         assertThat(slot.getInstructor()).isNull();
@@ -33,15 +33,15 @@ class WeeklySlotMapperTest {
 
     @Test
     void toResponseCopiesEveryFieldAndComputesEndTime() {
-        User coach = new User(Role.COACH, "Durand", "Claire", "claire@example.com", "secret");
-        ReflectionTestUtils.setField(coach, "id", 7);
+        User coach = new User(null, Roles.COACH, "Durand", "Claire", "claire@example.com", "secret");
+        ReflectionTestUtils.setField(coach, "id", 7L);
         WeeklySlot slot = new WeeklySlot(DayOfWeek.TUESDAY, LocalTime.of(17, 0), 10, 2);
         slot.assignInstructor(coach);
-        ReflectionTestUtils.setField(slot, "id", 1);
+        ReflectionTestUtils.setField(slot, "id", 1L);
 
         WeeklySlotResponseDto response = weeklySlotMapper.toResponse(slot);
 
-        assertThat(response).isEqualTo(new WeeklySlotResponseDto(1, DayOfWeek.TUESDAY, LocalTime.of(17, 0),
-                LocalTime.of(18, 0), 10, 2, new CoachResponseDto(7, "Claire", "Durand")));
+        assertThat(response).isEqualTo(new WeeklySlotResponseDto(1L, DayOfWeek.TUESDAY, LocalTime.of(17, 0),
+                LocalTime.of(18, 0), 10, 2, new CoachResponseDto(7L, "Claire", "Durand")));
     }
 }

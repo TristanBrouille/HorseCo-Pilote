@@ -33,19 +33,19 @@ public class WeeklySlotService {
                 .toList();
     }
 
-    public WeeklySlot getSlot(Integer id) {
+    public WeeklySlot getSlot(Long id) {
         return findSlotOrThrow(id);
     }
 
     @Transactional
-    public WeeklySlot createSlot(WeeklySlot slot, Integer coachId) {
+    public WeeklySlot createSlot(WeeklySlot slot, Long coachId) {
         slot.assignInstructor(userService.getCoach(coachId));
         checkCoachIsFree(slot, null);
         return weeklySlotRepository.save(slot);
     }
 
     @Transactional
-    public WeeklySlot updateSlot(Integer id, WeeklySlot changes, Integer coachId) {
+    public WeeklySlot updateSlot(Long id, WeeklySlot changes, Long coachId) {
         WeeklySlot slot = findSlotOrThrow(id);
         changes.assignInstructor(userService.getCoach(coachId));
         checkCoachIsFree(changes, id);
@@ -54,14 +54,14 @@ public class WeeklySlotService {
     }
 
     @Transactional
-    public void deleteSlot(Integer id) {
+    public void deleteSlot(Long id) {
         if (!weeklySlotRepository.existsById(id)) {
             throw new ResourceNotFoundException("Weekly slot", id);
         }
         weeklySlotRepository.deleteById(id);
     }
 
-    private void checkCoachIsFree(WeeklySlot candidate, Integer excludedSlotId) {
+    private void checkCoachIsFree(WeeklySlot candidate, Long excludedSlotId) {
         boolean overlaps = weeklySlotRepository
                 .findByInstructorIdAndDayOfWeek(candidate.getInstructor().getId(), candidate.getDayOfWeek())
                 .stream()
@@ -73,7 +73,7 @@ public class WeeklySlotService {
         }
     }
 
-    private WeeklySlot findSlotOrThrow(Integer id) {
+    private WeeklySlot findSlotOrThrow(Long id) {
         return weeklySlotRepository.findWithInstructorById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Weekly slot", id));
     }

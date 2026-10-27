@@ -1,6 +1,6 @@
 package com.epfjava.horsecopilote.user.presentation;
 
-import com.epfjava.horsecopilote.user.repository.User;
+import com.epfjava.horsecopilote.security.repository.User;
 import org.springframework.stereotype.Component;
 
 @Component

@@ -5,7 +5,7 @@ import java.time.DayOfWeek;
 import java.time.LocalTime;
 
 public record WeeklySlotResponseDto(
-        Integer id,
+        Long id,
         DayOfWeek dayOfWeek,
         LocalTime startTime,
         LocalTime endTime,

@@ -9,7 +9,7 @@ import java.time.DayOfWeek;
 import java.time.LocalTime;
 
 public record WeeklySlotRequestDto(
-        @NotNull Integer coachId,
+        @NotNull Long coachId,
         @NotNull DayOfWeek dayOfWeek,
         @NotNull LocalTime startTime,
         @NotNull @Min(1) @Max(12) Integer maxCapacity,
