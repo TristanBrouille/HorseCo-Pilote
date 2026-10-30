@@ -3,6 +3,7 @@ package com.epfjava.horsecopilote.weeklyslot.presentation;
 import com.epfjava.horsecopilote.weeklyslot.service.WeeklySlotService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,12 +21,16 @@ import java.util.List;
 @RequestMapping("/weekly-slots")
 public class WeeklySlotController {
 
+    // Authorities hold the bare role name (no ROLE_ prefix), hence hasAuthority rather than hasRole.
+    private static final String ADMIN_ONLY = "hasAuthority('ADMIN')";
+
     private final WeeklySlotService weeklySlotService;
 
     public WeeklySlotController(WeeklySlotService weeklySlotService) {
         this.weeklySlotService = weeklySlotService;
     }
 
+    @PreAuthorize(ADMIN_ONLY)
     @PostMapping
     public ResponseEntity<WeeklySlotResponseDto> createSlot(@Valid @RequestBody WeeklySlotRequestDto request) {
         WeeklySlotResponseDto createdSlot = weeklySlotService.createSlot(request);
@@ -46,12 +51,14 @@ public class WeeklySlotController {
         return ResponseEntity.ok(weeklySlotService.getSlot(id));
     }
 
+    @PreAuthorize(ADMIN_ONLY)
     @PutMapping("/{id}")
     public ResponseEntity<WeeklySlotResponseDto> updateSlot(@PathVariable Long id,
                                                             @Valid @RequestBody WeeklySlotRequestDto request) {
         return ResponseEntity.ok(weeklySlotService.updateSlot(id, request));
     }
 
+    @PreAuthorize(ADMIN_ONLY)
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteSlot(@PathVariable Long id) {
         weeklySlotService.deleteSlot(id);

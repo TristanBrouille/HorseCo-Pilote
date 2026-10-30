@@ -26,6 +26,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -37,7 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(WeeklySlotController.class)
 @Import(SecurityConfig.class)
-@WithMockUser
+@WithMockUser(authorities = "ADMIN")
 class WeeklySlotControllerTest {
 
     @MockitoBean
@@ -163,6 +164,38 @@ class WeeklySlotControllerTest {
         mockMvc.perform(get("/weekly-slots"))
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.detail").value("Unexpected error"));
+    }
+
+    @Test
+    @WithMockUser(authorities = "MEMBRE")
+    void memberCannotCreateUpdateOrDeleteSlots() throws Exception {
+        mockMvc.perform(post("/weekly-slots").contentType(MediaType.APPLICATION_JSON).content(VALID_REQUEST))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(put("/weekly-slots/1").contentType(MediaType.APPLICATION_JSON).content(VALID_REQUEST))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(delete("/weekly-slots/1"))
+                .andExpect(status().isForbidden());
+        verifyNoInteractions(weeklySlotService);
+    }
+
+    @Test
+    @WithMockUser(authorities = "MEMBRE")
+    void memberCanListSlots() throws Exception {
+        mockMvc.perform(get("/weekly-slots"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void unknownDayOfWeekReturns400() throws Exception {
+        mockMvc.perform(post("/weekly-slots").contentType(MediaType.APPLICATION_JSON)
+                        .content(VALID_REQUEST.replace("MONDAY", "FUNDAY")))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void nonNumericIdReturns400() throws Exception {
+        mockMvc.perform(get("/weekly-slots/abc"))
+                .andExpect(status().isBadRequest());
     }
 
     private static WeeklySlotResponseDto slotWithId(Long id) {
