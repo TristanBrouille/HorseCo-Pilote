@@ -34,8 +34,8 @@ Commandes : `npm start` (ng serve) · `npm run build` · `npm test`
 
 ## 3. État actuel du code
 
-- Back : entités `User`, `Member` et `WeeklySlot`, CRUD des créneaux hebdomadaires (`/weekly-slots`), liste et création des membres (`/members`, admin) et liste des coachs (`/coaches`). Données de test en V2 (profil `dev`), évolution de schéma V3 pas encore faite. Authentification par session (`/login`, `/me`) : endpoints réservés aux utilisateurs connectés.
-- Front : écran admin des créneaux (`/admin/creneaux`, calendrier hebdomadaire jours × heures + modales), écran admin des membres (`/admin/membres`, grille AG Grid + modale d’ajout), composants `hc-*` de base dans `decor/`.
+- Back : entités `User`, `Member`, `WeeklySlot` et `Horse`, CRUD des créneaux hebdomadaires (`/weekly-slots`), CRUD des chevaux (`/horses`, admin), liste et création des membres (`/members`, admin) et liste des coachs (`/coaches`). Données de test en V2 (profil `dev`), évolution de schéma V3 pas encore faite. Authentification par session (`/login`, `/me`) : endpoints réservés aux utilisateurs connectés.
+- Front : écran admin des créneaux (`/admin/creneaux`, calendrier hebdomadaire jours × heures + modales), écran admin des chevaux (`/admin/chevaux`, grille AG Grid + modales), écran admin des membres (`/admin/membres`, grille AG Grid + modale d’ajout), composants `hc-*` de base dans `decor/`.
 - Dépôts git à la racine des dossiers parents (`HorseCo-Pilote`, `HorseCo-Pilote-Front`).
 
 ## 4. Rôles
@@ -79,8 +79,8 @@ Les valeurs des enums sont en français, telles que définies par l'équipe. Ell
 users (id, role, last_name, first_name, email UNIQUE, password)
  └─ member (user_id PK/FK → users, galop_level, height_cm, weight_kg)
 
-location (id, name UNIQUE)                       -- à supprimer (devient l'enum Location)
-horse (id, location_id → location, name, breed, height_cm,
+horse (id, location,   -- Location
+       name, breed, height_cm, weight_kg,
        daily_hours, status, required_level)
 
 weekly_slot (id, instructor_id → users, day_of_week, start_time,
@@ -88,7 +88,8 @@ weekly_slot (id, instructor_id → users, day_of_week, start_time,
 weekly_slot_member (weekly_slot_id, user_id → member)          -- inscription annuelle
 
 lesson (id, weekly_slot_id → weekly_slot NULL, instructor_id → users,
-        location_id → location, start_datetime,
+        location,  -- Location
+        start_datetime,
         topic,   -- LessonType
         status)  -- LessonStatus (annulée ou non)            -- leçon d'une semaine donnée
 lesson_booking (id, lesson_id, user_id → member, horse_id → horse NULL)
@@ -105,12 +106,12 @@ lesson_booking (id, lesson_id, user_id → member, horse_id → horse NULL)
 
 Ne jamais modifier une migration existante (`V1__init_schema.sql`, `V2__seed_dev_data.sql`) : toute évolution passe par une nouvelle migration `V3__…`. Les numéros de version sont partagés entre `db/migration` et `db/dev-data` : ne jamais réutiliser un numéro déjà pris dans l’un ou l’autre dossier.
 
-**Données de test** : `src/main/resources/db/dev-data/V2__seed_dev_data.sql` (12 utilisateurs dont 1 admin, 3 coachs, 8 membres galop 1 à 7 ; 10 chevaux couvrant tous les statuts ; 7 créneaux ; 5 leçons de la semaine du 12/10/2026, dont une annulée et une avec inscription tardive ; mot de passe `password`). Chargé uniquement par le profil `dev` (`application-dev.properties`), qui est le profil par défaut en local (`spring.profiles.default=dev`) : en production, définir `SPRING_PROFILES_ACTIVE`. La V3 s’exécute après ces données en dev et doit donc les migrer (ex. `location_id` → colonne `location`, dont les noms valent déjà les valeurs de l’enum).
+**Données de test** : `src/main/resources/db/dev-data/V2__seed_dev_data.sql` (12 utilisateurs dont 1 admin, 3 coachs, 8 membres galop 1 à 7 ; 10 chevaux couvrant tous les statuts ; 7 créneaux ; 5 leçons de la semaine du 12/10/2026, dont une annulée et une avec inscription tardive ; mot de passe `password`). Chargé uniquement par le profil `dev` (`application-dev.properties`), qui est le profil par défaut en local (`spring.profiles.default=dev`) : en production, définir `SPRING_PROFILES_ACTIVE`. La V3 s’exécute après ces données en dev et doit donc les migrer.
 
-1. **Supprimer la table `location`** : remplacer `horse.location_id` et `lesson.location_id` par une colonne `location VARCHAR` (enum `Location`).
-2. **Ajouter `horse.weight_kg`** : nécessaire pour la règle des 20 % du poids (R14).
-3. **Ajouter une date d'inscription** sur `weekly_slot_member` (ex. `enrolled_at`) pour la désinscription automatique au bout d'un an.
-4. **`lesson.weekly_slot_id` devient obligatoire** (`NOT NULL`) : toute leçon vient d'un créneau.
+Déjà fait : la table `location` est remplacée par la colonne `location` (enum `Location`) sur `horse` et `lesson`, et `horse.weight_kg` est ajouté (R14). Exception à la règle ci-dessus, décidée par l'équipe : ces changements ont été faits directement dans la V1 et la V2, avant toute mise en production ; les bases locales existantes doivent être recréées (`docker compose down -v`).
+
+1. **Ajouter une date d'inscription** sur `weekly_slot_member` (ex. `enrolled_at`) pour la désinscription automatique au bout d'un an.
+2. **`lesson.weekly_slot_id` devient obligatoire** (`NOT NULL`) : toute leçon vient d'un créneau.
 
 Les limites (12 participants, `daily_hours` ≤ 3, 2 h consécutives, 20 % du poids…) sont **contrôlées dans le back (services / validation des entités), pas par des `CHECK` en base**. Elles seront écrites avec les entités.
 
