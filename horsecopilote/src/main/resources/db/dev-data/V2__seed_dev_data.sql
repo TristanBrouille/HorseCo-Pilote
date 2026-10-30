@@ -30,26 +30,18 @@ VALUES (5, 1, 140, 35.00),
        (11, 6, 170, 62.00),
        (12, 7, 182, 75.00);
 
--- ---------- Lieux (noms = valeurs de l'enum Location) ----------
-INSERT INTO "location" ("id", "name")
-VALUES (1, 'CARRIERE'),
-       (2, 'PRE'),
-       (3, 'MANEGE'),
-       (4, 'BOX'),
-       (5, 'PADOCK');
-
 -- ---------- Chevaux : un de chaque statut, daily_hours <= 3 ----------
-INSERT INTO "horse" ("id", "location_id", "name", "breed", "height_cm", "daily_hours", "status", "required_level")
-VALUES (1, 4, 'Tornado', 'Selle Français', 168, 3, 'DISPONIBLE', 3),
-       (2, 2, 'Caramel', 'Connemara', 145, 3, 'DISPONIBLE', 1),
-       (3, 4, 'Éclair', 'Pur-sang arabe', 152, 2, 'DISPONIBLE', 4),
-       (4, 5, 'Noisette', 'Haflinger', 148, 3, 'DISPONIBLE', 1),
-       (5, 4, 'Rubis', 'KWPN', 170, 2, 'DISPONIBLE', 5),
-       (6, 4, 'Ulysse', 'Anglo-arabe', 163, 3, 'REPOS', 3),
-       (7, 2, 'Vanille', 'Welsh', 140, 3, 'PRE', 1),
-       (8, 4, 'Zéphyr', 'Hanovrien', 172, 2, 'CONVALESCENCE', 6),
-       (9, 1, 'Quartz', 'Lusitanien', 160, 3, 'DISPONIBLE', 2),
-       (10, 2, 'Pépite', 'Camargue', 147, 3, 'DISPONIBLE', 1);
+INSERT INTO "horse" ("id", "location", "name", "breed", "height_cm", "weight_kg", "daily_hours", "status", "required_level")
+VALUES (1, 'BOX', 'Tornado', 'Selle Français', 168, 560, 3, 'DISPONIBLE', 3),
+       (2, 'PRE', 'Caramel', 'Connemara', 145, 380, 3, 'DISPONIBLE', 1),
+       (3, 'BOX', 'Éclair', 'Pur-sang arabe', 152, 450, 2, 'DISPONIBLE', 4),
+       (4, 'PADOCK', 'Noisette', 'Haflinger', 148, 500, 3, 'DISPONIBLE', 1),
+       (5, 'BOX', 'Rubis', 'KWPN', 170, 620, 2, 'DISPONIBLE', 5),
+       (6, 'BOX', 'Ulysse', 'Anglo-arabe', 163, 540, 3, 'REPOS', 3),
+       (7, 'PRE', 'Vanille', 'Welsh', 140, 300, 3, 'PRE', 1),
+       (8, 'BOX', 'Zéphyr', 'Hanovrien', 172, 640, 2, 'CONVALESCENCE', 6),
+       (9, 'CARRIERE', 'Quartz', 'Lusitanien', 160, 520, 3, 'DISPONIBLE', 2),
+       (10, 'PRE', 'Pépite', 'Camargue', 147, 420, 3, 'DISPONIBLE', 1);
 
 -- ---------- Creneaux hebdomadaires (1 h, sans chevauchement par coach) ----------
 INSERT INTO "weekly_slot" ("id", "instructor_id", "day_of_week", "start_time", "duration_minutes", "max_capacity", "required_level")
@@ -73,12 +65,12 @@ VALUES (1, 5), (1, 6), (1, 7),
 
 -- ---------- Lecons de la semaine du 12/10/2026 ----------
 -- Creneaux 6 et 7 (samedi) : lecons pas encore creees par le coach
-INSERT INTO "lesson" ("id", "weekly_slot_id", "instructor_id", "location_id", "start_datetime", "topic", "status")
-VALUES (1, 1, 2, 1, '2026-10-12 18:00', 'CSO', 'TERMINEE'),
-       (2, 2, 2, 3, '2026-10-12 19:00', 'DRESS', 'TERMINEE'),
-       (3, 3, 3, 3, '2026-10-14 14:00', 'MISE_EN_SELLE', 'PREVUE'),
-       (4, 4, 4, 1, '2026-10-14 17:00', 'CSO', 'PREVUE'),
-       (5, 5, 3, 1, '2026-10-16 18:00', 'TAP', 'ANNULEE');
+INSERT INTO "lesson" ("id", "weekly_slot_id", "instructor_id", "location", "start_datetime", "topic", "status")
+VALUES (1, 1, 2, 'CARRIERE', '2026-10-12 18:00', 'CSO', 'TERMINEE'),
+       (2, 2, 2, 'MANEGE', '2026-10-12 19:00', 'DRESS', 'TERMINEE'),
+       (3, 3, 3, 'MANEGE', '2026-10-14 14:00', 'MISE_EN_SELLE', 'PREVUE'),
+       (4, 4, 4, 'CARRIERE', '2026-10-14 17:00', 'CSO', 'PREVUE'),
+       (5, 5, 3, 'CARRIERE', '2026-10-16 18:00', 'TAP', 'ANNULEE');
 
 -- ---------- Participants valides et chevaux attribues ----------
 -- Lecon 3 : Hugo valide, cheval pas encore attribue
@@ -98,7 +90,6 @@ VALUES (1, 1, 5, 2),
 
 -- ---------- Sequences alignees sur les ids inseres ----------
 SELECT setval(pg_get_serial_sequence('users', 'id'), (SELECT MAX("id") FROM "users"));
-SELECT setval(pg_get_serial_sequence('location', 'id'), (SELECT MAX("id") FROM "location"));
 SELECT setval(pg_get_serial_sequence('horse', 'id'), (SELECT MAX("id") FROM "horse"));
 SELECT setval(pg_get_serial_sequence('weekly_slot', 'id'), (SELECT MAX("id") FROM "weekly_slot"));
 SELECT setval(pg_get_serial_sequence('lesson', 'id'), (SELECT MAX("id") FROM "lesson"));
