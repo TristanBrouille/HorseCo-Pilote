@@ -28,23 +28,23 @@ Commandes : `docker compose up -d` · `./mvnw spring-boot:run` · `./mvnw test`
 - Angular 22 (composants standalone, signals), TypeScript 6, RxJS 7.8
 - Tests : Vitest (`@angular/build:unit-test`) + jsdom
 - Prettier : `printWidth` 100, `singleQuote`
-- État actuel : projet vierge (`routes` vide, aucun service HTTP)
+- Tableaux : AG Grid (`ag-grid-angular`), thème branché sur les tokens du design system
 
 Commandes : `npm start` (ng serve) · `npm run build` · `npm test`
 
 ## 3. État actuel du code
 
-- Back : seulement `HorsecopiloteApplication` et la migration `V1__init_schema.sql`. Aucune entité, aucun repository, service ou controller.
-- Front : squelette généré par Angular CLI.
+- Back : entités `User` et `WeeklySlot`, CRUD des créneaux hebdomadaires (`/weekly-slots`) et liste des coachs (`/coaches`). Données de test en V2 (profil `dev`), évolution de schéma V3 pas encore faite. Authentification par session (`/login`, `/me`) : endpoints réservés aux utilisateurs connectés.
+- Front : écran admin des créneaux (`/admin/creneaux`, calendrier hebdomadaire jours × heures + modales), composants `hc-*` de base dans `decor/`.
 - Dépôts git à la racine des dossiers parents (`HorseCo-Pilote`, `HorseCo-Pilote-Front`).
 
 ## 4. Rôles
 
-Trois rôles uniquement (colonne `users.role`, enum `Role`) :
+Trois rôles uniquement (colonne `users.role`, enum `Roles`) :
 
 | Rôle | Valeur | Description |
 |---|---|---|
-| Membre | `MEMBER` | Cavalier client du centre. Possède une ligne dans `member` (niveau de galop, taille, poids). |
+| Membre | `MEMBRE` | Cavalier client du centre. Possède une ligne dans `member` (niveau de galop, taille, poids). |
 | Coach | `COACH` | Moniteur : crée chaque semaine les leçons de ses créneaux et attribue les chevaux. |
 | Admin | `ADMIN` | Gère tout le centre (membres, coachs, chevaux, créneaux) et valide les modifications de cours. |
 
@@ -64,7 +64,7 @@ Les valeurs des enums sont en français, telles que définies par l'équipe. Ell
 
 | Enum | Valeurs | Utilisation |
 |---|---|---|
-| `Role` | `MEMBER`, `COACH`, `ADMIN` | `users.role` |
+| `Roles` | `MEMBRE`, `COACH`, `ADMIN` | `users.role` |
 | `Location` | `CARRIERE`, `PRE`, `MANEGE`, `BOX`, `PADOCK` | Remplace la table `location` : lieu actuel du cheval et lieu de la leçon |
 | `HorseStatus` | `REPOS`, `PRE`, `DISPONIBLE`, `CONVALESCENCE` | `horse.status` — seul `DISPONIBLE` permet d'affecter le cheval à une leçon |
 | `LessonType` | `CSO`, `DRESS`, `TAP`, `ETHOLOGIE`, `MISE_EN_SELLE` | `lesson.topic` — discipline affichée dans le descriptif de la leçon (libellé « MISE EN SELLE ») |
@@ -101,9 +101,11 @@ lesson_booking (id, lesson_id, user_id → member, horse_id → horse NULL)
 - **Pas de gestion des box en tant que table** : `BOX` est seulement une valeur de l'enum `Location`.
 - Niveaux = galops (entiers). Un membre est « compatible » avec un niveau requis si `galop_level >= required_level`.
 
-### Changements de schéma à faire (migration V2)
+### Changements de schéma à faire (migration V3)
 
-Ne jamais modifier `V1__init_schema.sql` : toute évolution passe par une nouvelle migration `V2__…`.
+Ne jamais modifier une migration existante (`V1__init_schema.sql`, `V2__seed_dev_data.sql`) : toute évolution passe par une nouvelle migration `V3__…`. Les numéros de version sont partagés entre `db/migration` et `db/dev-data` : ne jamais réutiliser un numéro déjà pris dans l’un ou l’autre dossier.
+
+**Données de test** : `src/main/resources/db/dev-data/V2__seed_dev_data.sql` (12 utilisateurs dont 1 admin, 3 coachs, 8 membres galop 1 à 7 ; 10 chevaux couvrant tous les statuts ; 7 créneaux ; 5 leçons de la semaine du 12/10/2026, dont une annulée et une avec inscription tardive ; mot de passe `password`). Chargé uniquement par le profil `dev` (`application-dev.properties`), qui est le profil par défaut en local (`spring.profiles.default=dev`) : en production, définir `SPRING_PROFILES_ACTIVE`. La V3 s’exécute après ces données en dev et doit donc les migrer (ex. `location_id` → colonne `location`, dont les noms valent déjà les valeurs de l’enum).
 
 1. **Supprimer la table `location`** : remplacer `horse.location_id` et `lesson.location_id` par une colonne `location VARCHAR` (enum `Location`).
 2. **Ajouter `horse.weight_kg`** : nécessaire pour la règle des 20 % du poids (R14).
@@ -152,7 +154,7 @@ Légende : **[DB]** garanti par la base · **[S]** vérifié dans le back (renvo
 
 ## 9. Matrice des droits
 
-| Action | MEMBER | COACH | ADMIN |
+| Action | MEMBRE | COACH | ADMIN |
 |---|---|---|---|
 | Voir les créneaux / leçons | ✅ tous (hors niveau = grisés) | ✅ les siens | ✅ tous |
 | Voir les participants | ❌ | ✅ ses cours | ✅ |
@@ -166,7 +168,7 @@ Légende : **[DB]** garanti par la base · **[S]** vérifié dans le back (renvo
 
 ## 10. Fonctionnalités (backlog par ordre de réalisation)
 
-1. **Socle** : enums (§6), migration V2 (§7), `spring-boot-starter-validation`, `@RestControllerAdvice` global, CORS pour le front.
+1. **Socle** : enums (§6), migration V3 (§7), `spring-boot-starter-validation`, `@RestControllerAdvice` global, CORS pour le front.
 2. **Authentification** : login email + mot de passe (BCrypt), sécurisation des endpoints par rôle ; côté front : page de login, intercepteur HTTP, guards par rôle.
 3. **Gestion des utilisateurs (admin)** : CRUD membres (niveau de galop, taille, poids) et coachs.
 4. **Gestion des chevaux (admin)** : CRUD, statut, lieu, poids, `daily_hours` ≤ 3.
@@ -189,27 +191,33 @@ Format des issues : user stories « ETQ <rôle> je veux … ».
 ## 11. Conventions
 
 ### Back (détail dans `.claude/skills/spring-feature-developer`)
-- Architecture 3 couches stricte : Controller → Service → Repository. Un controller n'appelle jamais un repository, un service ne manipule jamais de DTO.
+- Architecture 3 couches stricte : Controller → Service → Repository. Un controller n’appelle jamais un repository ni un mapper : il passe le DTO de requête au service et renvoie le DTO de réponse du service. Toute conversion (liste, tri, mapping) est de la logique et va dans le service.
+- Un package par fonctionnalité, avec un sous-package par couche : `<fonctionnalite>/presentation` (controller, DTO), `<fonctionnalite>/service` (logique métier, mapper), `<fonctionnalite>/repository` (entités, enums stockés, repositories). Le code commun va dans `common/` (`presentation` : `GlobalExceptionHandler`, `service` : exceptions). Exemple : `weeklyslot/`, `user/`.
+- Utilisateurs et authentification : l’entité `User`, l’enum `Roles` et le `UserRepository` sont dans `security/repository` (implémenté par `security/infrastructure/UserJpaRepository`), la configuration de sécurité dans `security/infrastructure/SecurityConfig`. Ne pas les dupliquer dans une feature : ajouter les requêtes nécessaires à ce `UserRepository`.
+- URLs des endpoints sans préfixe `/api` (ex. `/weekly-slots`, `/coaches`).
 - Identifiants, tables, colonnes, messages et tests **en anglais**. Exception : les valeurs des enums métier (§6) sont en français.
-- DTO = `record` (un par fichier, request/response séparés), un `@Component` mapper par ressource.
+- DTO = `record` (un par fichier, request/response séparés). Un mapper MapStruct par ressource : interface `@Mapper(componentModel = "spring")` dans le package `service`, appelée uniquement par le service.
 - Injection par constructeur, champs `final`. Lombok autorisé (déjà présent).
-- Erreurs : `ResourceNotFoundException` → 404, validation → 400, violation de règle métier → 409/422 en `ProblemDetail`.
+- Erreurs : un seul `common/presentation/GlobalExceptionHandler`, réponses en `ProblemDetail` : `ResourceNotFoundException` → 404, validation → 400 (détail par champ dans `errors`), violation de règle métier (`BusinessRuleException`) → 409.
 - Limites métier dans le back (validation + services), pas de `CHECK` en base.
 - Chaque changement de schéma = nouvelle migration Flyway ; ne jamais modifier une migration existante ; demander avant de modifier une entité existante.
-- Tests : services (JUnit 5 + Mockito), mappers, controllers (`@WebMvcTest`). `./mvnw test` doit rester vert.
+- Tests : services (JUnit 5 + Mockito, mapper réel via `new <Ressource>MapperImpl(...)`), mappers, controllers (`@WebMvcTest`). `./mvnw test` doit rester vert.
 
 ### Front
 - **Direction artistique** : suivre la skill `.claude/skills/horseco-design-system` du dépôt front (tokens couleurs/typo, composants `hc-*`, états grisé/surbrillance), identique à la maquette Figma « HorseCo-Pilote — Maquette ».
-- Composants standalone et signals, un dossier par fonctionnalité (`features/horses`, `features/slots`, `features/lessons`…), services HTTP dans `core/`.
+- **Architecture identique au front EPF Core** (détail dans `.claude/skills/horseco-design-system/references/architecture.md` du dépôt front) : un dossier par écran à la racine de `src/app/` (`weekly-slots/`, `horses/`…) contenant le composant, son service HTTP `<ecran>-service.ts` (méthodes en `Promise` via `firstValueFrom`) et ses interfaces dans `<ecran>Model.ts` (ex. `coaches/coachModel.ts`, `weekly-slots/weeklySlotModel.ts`, pas de dossier `model/`). Le code annexe d’un écran va dans un sous-dossier de cet écran (ex. `weekly-slots/calendar-layout/`). Cadre et composants `hc-*` dans `decor/`, intercepteurs dans `interceptors/`. Composants standalone et signals, routes lazy.
+- Chaque composant (y compris dans `decor/`) a son template dans un fichier `.html` (`templateUrl`) et ses styles dans un fichier `.scss` (`styleUrl`) : pas de `template` ni de `styles` en ligne.
+- URLs du back sans préfixe `/api`.
 - Modèles TypeScript alignés sur les DTO de réponse du back ; enums TypeScript identiques aux enums Java.
 - Les règles R4, R20 (éléments grisés) et R7bis (surbrillance) s'appuient sur les indicateurs renvoyés par l'API, sans recalculer les règles côté front.
-- Formatage Prettier du projet, tests Vitest.
+- Formatage Prettier du projet. Les tests front (Vitest) sont facultatifs : l’équipe n’en exige pas, ceux qui existent sont gardés.
 
 ### Git (back + front)
 - Les deux dépôts se commitent **toujours ensemble** : à chaque demande de commit, vérifier `git status` dans les deux, et commiter chacun s'il a des changements.
 - Même nom de branche et même message de commit dans les deux dépôts, pour pouvoir les relier.
 - Ne jamais commiter sur `main` : créer la branche dans les deux dépôts d'abord.
 - Ne pas pousser sans demande explicite ; quand c'est demandé, pousser les deux.
+- Ne jamais ajouter de ligne `Co-Authored-By` ni aucune mention de Claude (ou « Generated with Claude Code ») dans les messages de commit, les PR et les commentaires de review.
 
 ## 12. Points encore ouverts
 

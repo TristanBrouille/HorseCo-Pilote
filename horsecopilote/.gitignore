@@ -33,3 +33,6 @@ build/
 .vscode/
 
 .claude/settings.local.json
+
+### Playwright MCP ###
+.playwright-mcp/

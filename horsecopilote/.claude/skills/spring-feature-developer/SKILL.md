@@ -18,33 +18,68 @@ Every feature follows a strict 3-tier architecture. Each class belongs to exactl
 
 ### Presentation tier
 
-Controllers, DTOs and mappers.
+Controllers and DTOs.
 
-- **Controllers**: annotated `@RestController`, with `@RequestMapping` on the class and `@GetMapping`, `@PostMapping`, `@PutMapping`, `@PatchMapping` or `@DeleteMapping` on the methods. They handle HTTP only: routing, input validation with `@Valid`, conversion through the mapper, and status codes.
+- **Controllers**: annotated `@RestController`, with `@RequestMapping` on the class (no `/api` prefix: `/tasks`, `/weekly-slots`) and `@GetMapping`, `@PostMapping`, `@PutMapping`, `@PatchMapping` or `@DeleteMapping` on the methods. They handle HTTP only: routing, input validation with `@Valid`, passing the request DTO to the service, and status codes. They never call a mapper.
 - **DTOs**: Java `record` types, one per file, with `jakarta.validation` annotations on request DTOs.
-- **Mappers**: one `@Component` class per resource (for example `TaskMapper`) with `toEntity(requestDto)` and `toResponse(entity)` methods. The mapper is the only place where DTOs and entities are converted into each other. Response records contain no conversion logic.
 - **Exception handler**: the global `@RestControllerAdvice` belongs here, since turning exceptions into HTTP responses is an HTTP concern.
 
 ### Service tier
 
-Classes annotated `@Service`. All business logic and transactions (`@Transactional`) live here. A service receives and returns only entities or simple types (`Long`, `String`, `boolean`...), never DTOs. Business exceptions thrown by services, such as `ResourceNotFoundException`, belong to this tier.
+Classes annotated `@Service`, and the mappers they use. All business logic and transactions (`@Transactional`) live here, including converting results (lists, sorting, mapping). A public service method receives request DTOs or simple types (`Long`, `String`, `boolean`...) and returns response DTOs; entities never leave the service. Methods used only by other services (for example `UserService.getCoach(Long)`) may return entities.
+
+- **Mappers**: one MapStruct interface per resource, annotated `@Mapper(componentModel = "spring")` (with `uses = ...` and `injectionStrategy = InjectionStrategy.CONSTRUCTOR` when it reuses another mapper), exposing `toResponse(entity)` and, when needed, `toEntity(requestDto)`. When the entity has no setters, write `toEntity` as a `default` method calling the business constructor. Only services call mappers.
+- Business exceptions thrown by services, such as `ResourceNotFoundException`, belong to this tier.
 
 ### Repository tier (data access)
 
 - **Repositories**: interfaces explicitly annotated `@Repository` that extend `JpaRepository`.
 - **Entities**: JPA classes annotated `@Entity` and `@Table(name = "...")` with an explicit table name.
 
+### Package layout: one package per feature, one sub-package per tier
+
+The tiers are physical packages. Every feature has its own package under the root package, containing exactly three sub-packages named after the tiers:
+
+```
+com.epfjava.horsecopilote
+├── HorsecopiloteApplication.java
+├── common/                      # cross-cutting code, same tier split
+│   ├── presentation/            # GlobalExceptionHandler (@RestControllerAdvice)
+│   └── service/                 # ResourceNotFoundException, BusinessRuleException
+├── security/                    # authentication, shared by every feature
+│   ├── infrastructure/          # SecurityConfig, UserJpaRepository
+│   ├── presentation/            # login / me / register controller and DTOs
+│   ├── service/                 # AuthenticationService
+│   └── repository/              # User, Roles, UserRepository, CustomUserDetailsService
+├── user/
+│   ├── presentation/            # CoachController, CoachResponseDto
+│   └── service/                 # UserService, CoachMapper
+└── weeklyslot/
+    ├── presentation/            # WeeklySlotController, WeeklySlotRequestDto, WeeklySlotResponseDto
+    ├── service/                 # WeeklySlotService, WeeklySlotMapper
+    └── repository/              # WeeklySlot, WeeklySlotRepository
+```
+
+- **Feature package**: singular, lowercase, no separator (`horse`, `weeklyslot`, `lesson`, `lessonbooking`).
+- **`presentation/`**: controllers and request/response DTO records, side by side (no further sub-packages).
+- **`service/`**: `@Service` classes with the business logic and the MapStruct mappers. Service-tier exceptions shared by every feature live in `common/service/`.
+- **Users and security**: `User`, `Roles` and `UserRepository` live in `security/repository/` (implemented by `security/infrastructure/UserJpaRepository`). Never create another `User` entity, role enum, user repository, `SecurityConfig` or exception handler in a feature: add the query you need to `UserRepository` and `UserJpaRepository`.
+- **`repository/`**: `@Entity` classes, the enums they store, and the `@Repository` interfaces.
+- **Cross-feature access** follows the tier rules: a service may call another feature's service (`WeeklySlotService` → `UserService`), a mapper may reuse another feature's mapper (`WeeklySlotMapper` → `CoachMapper`), an entity may reference another feature's entity (`WeeklySlot` → `User`). A service never calls another feature's repository directly; it goes through that feature's service.
+- **Tests** mirror the same packages under `src/test/java` (`weeklyslot/service/WeeklySlotServiceTest`, `weeklyslot/presentation/WeeklySlotControllerTest`...).
+
 ### Dependency rules
 
 - Calls flow in one direction only: Presentation -> Service -> Repository.
 - A controller never calls a repository directly.
-- A service never imports a class from the Presentation tier (DTO, mapper, controller).
-- A controller contains no business logic: it validates the input, converts it with the mapper, calls one service method, converts the result with the mapper and returns the `ResponseEntity`.
-- A service loads all the data the mapper will need, using a fetch join or `@EntityGraph` for lazy relations, because mapping happens outside the transaction.
+- A controller never calls a mapper and never sees an entity.
+- A service may import the request/response DTOs of the Presentation tier, never a controller.
+- A controller contains no business logic: it validates the input, calls one service method with the request DTO and returns the response DTO in a `ResponseEntity`.
+- A service loads all the data the mapper will need (fetch join or `@EntityGraph` for lazy relations) and maps inside the transaction.
 
 ### Updating a resource
 
-The controller converts the request DTO into a non-persisted entity with the mapper, then calls a service method such as `updateTask(Long id, Task changes)`. The service loads the existing entity and copies the fields from `changes` onto it.
+The controller calls a service method such as `updateTask(Long id, TaskRequestDto request)`. The service loads the existing entity, builds the changes with the mapper (`toEntity`), copies them onto the managed entity and returns `mapper.toResponse(entity)`.
 
 ## Procedure
 
@@ -54,7 +89,7 @@ Before changing anything:
 
 1. Read `pom.xml` and note the `java.version`, the Spring Boot version (parent or BOM), and which starters are present (`validation`, `data-jpa`, `flyway`, `liquibase`, `lombok`, test starters). Java 25 requires a recent Spring Boot release; if the declared versions look incompatible, tell the user instead of silently changing them.
 2. Detect the build command: use `./mvnw` if the Maven wrapper exists, otherwise `mvn`.
-3. Look at the existing package layout. If the project is organized by feature (`product/ProductController`, `product/ProductService`) follow that; if it is organized by layer (`controller/`, `service/`, `dto/`) follow that. Matching the existing structure matters more than any template in this skill. Whatever the package layout, the tier rules in the Architecture section still apply.
+3. Use the package layout described above (feature package with `presentation/`, `service/` and `repository/` sub-packages). Put a new class in the feature it belongs to, creating the feature package if needed; shared exceptions and configuration go to `common/`. Never recreate layer-wide packages such as `controller/`, `dto/` or `entity/` at the root. Whatever the package, the tier rules in the Architecture section still apply.
 4. Note existing conventions: how DTOs are mapped, how exceptions are handled, whether a global `@RestControllerAdvice` already exists, whether Lombok is used. Reuse what exists rather than introducing a parallel mechanism, as long as it does not break the Architecture rules.
 5. Run `./mvnw test` (or `mvn test`) once and record the result. If tests already fail before your changes, report which ones to the user and ask whether to proceed. Pre-existing failures are not yours to fix silently, and without a baseline you cannot tell a regression from an old bug.
 
@@ -86,7 +121,7 @@ Never implement a feature directly on the default branch. Once the request is cl
 3. Create and switch to a new branch: `git checkout -b feature/<short-kebab-case-name>` (for example `feature/horse-crud`, or `fix/<name>` for a bug fix). Follow the project's naming convention if one exists in existing branches or in `CLAUDE.md`. If the branch already exists, ask the user whether to reuse it or pick another name.
 4. If the user is already on a non-default branch dedicated to this work, stay on it.
 
-Do not commit, push or open a pull request unless the user asks.
+Do not commit, push or open a pull request unless the user asks. Never add Claude as a co-author of commits: no `Co-Authored-By: Claude …` trailer (nor any other Claude/Anthropic attribution) in commit messages or pull request descriptions.
 
 ### 3. Protect existing JPA entities
 
@@ -110,12 +145,12 @@ Follow these conventions in every tier:
 Class by class:
 
 - **Entity** (Repository tier): JPA entity annotated `@Entity` and `@Table(name = "...")`, with a protected or public no-arg constructor, a business constructor, getters, and setters only for mutable fields. New entities can be created directly.
-- **Repository** (Repository tier): interface annotated `@Repository` extending `JpaRepository<Entity, Long>`. Add derived query methods only when needed, and add fetch joins or `@EntityGraph` methods when the mapper needs lazy relations.
-- **Service** (Service tier): all business logic lives here. Annotate the class with `@Transactional(readOnly = true)` and override write methods with `@Transactional`. Methods take and return entities or simple types, never DTOs. Use Java Streams (`stream()`, `map()`, `filter()`, `toList()`) for collection processing. When an entity is not found, throw a dedicated `ResourceNotFoundException` rather than returning `null` or an `Optional` to the controller.
+- **Repository** (Repository tier): interface annotated `@Repository` extending `JpaRepository<Entity, Long>`. Add derived query methods only when needed, and add fetch joins or `@EntityGraph` methods when the mapper needs lazy relations. User queries go into `security/repository/UserRepository` and `security/infrastructure/UserJpaRepository`.
+- **Service** (Service tier): all business logic lives here. Annotate the class with `@Transactional(readOnly = true)` and override write methods with `@Transactional`. Public methods take request DTOs or simple types and return response DTOs, converting with the mapper. Use Java Streams (`stream()`, `map()`, `filter()`, `toList()`) for collection processing. When an entity is not found, throw a dedicated `ResourceNotFoundException` rather than returning `null` or an `Optional` to the controller.
+- **Mapper** (Service tier): one MapStruct interface per resource, `@Mapper(componentModel = "spring")`, in the feature's `service/` package. It is the only place where DTOs and entities are converted, and only services call it. MapStruct needs the `org.mapstruct:mapstruct` dependency plus `mapstruct-processor` and `lombok-mapstruct-binding` in the compiler's `annotationProcessorPaths` (after Lombok).
 - **DTOs** (Presentation tier): Java `record` types, one public record per file. Use separate request and response records. Put Bean Validation annotations (`@NotBlank`, `@Size`, `@NotNull`, `@Positive`...) on request record components. Never expose entities in controllers.
-- **Mapper** (Presentation tier): one `@Component` class per resource with `toEntity(requestDto)` and `toResponse(entity)` methods, overloaded per request DTO when needed. It is the only place where DTOs and entities are converted. If the project already uses MapStruct, a MapStruct mapper with `componentModel = "spring"` exposing the same methods is acceptable.
-- **Exception handling** (Presentation tier): if no global handler exists, create one `@RestControllerAdvice` that maps `ResourceNotFoundException` to `404` and `MethodArgumentNotValidException` to `400`, returning `ProblemDetail`. If a handler exists, extend it. This is what keeps status-code logic out of controllers.
-- **Controller** (Presentation tier): HTTP only. Validate with `@Valid` on every `@RequestBody`, convert with the mapper, delegate to one service method per endpoint, convert the result with the mapper and wrap it in a `ResponseEntity`. Status codes: `200` for reads and updates, `201` with a `Location` header for creation, `204` for deletion, `400` and `404` produced by the advice. No `if`, loops, business logic or repository access in controllers.
+- **Exception handling** (Presentation tier): a single `common/presentation/GlobalExceptionHandler` (`@RestControllerAdvice`) returning `ProblemDetail`: `ResourceNotFoundException` to `404`, `MethodArgumentNotValidException` to `400` with the field errors in an `errors` property, `BusinessRuleException` to `409`. Extend it rather than creating another handler.
+- **Controller** (Presentation tier): HTTP only. Validate with `@Valid` on every `@RequestBody`, delegate to one service method per endpoint and wrap its DTO in a `ResponseEntity`. Status codes: `200` for reads and updates, `201` with a `Location` header for creation, `204` for deletion, `400`, `404` and `409` produced by the advice. No mapper, no `if`, loops, business logic or repository access in controllers.
 - **Dependencies**: if validation is needed and `spring-boot-starter-validation` is missing from `pom.xml`, add it and mention it in the summary.
 
 ### 6. Database migrations
@@ -130,10 +165,12 @@ Re-read every class created or modified and confirm that:
 
 - each class belongs to exactly one tier;
 - no controller calls a repository;
-- no service imports a DTO, mapper or controller, and no service method takes or returns a DTO;
+- no controller imports a mapper or an entity;
+- public service methods take request DTOs or simple types and return response DTOs;
 - no controller contains business logic;
-- every DTO-entity conversion goes through the mapper;
-- every relation the mapper reads is loaded by the service.
+- every DTO-entity conversion goes through a MapStruct mapper called by the service;
+- every relation the mapper reads is loaded by the service;
+- no duplicate `User`, role enum, user repository, `SecurityConfig` or exception handler was created.
 
 Fix any violation before moving on to the tests.
 
@@ -141,9 +178,9 @@ Fix any violation before moving on to the tests.
 
 Cover the new code with:
 
-- **Service unit tests** using JUnit 5 and Mockito (`@ExtendWith(MockitoExtension.class)`), working with entities: nominal cases, not-found cases, and any business rule.
-- **Mapper unit tests**: plain JUnit tests checking `toEntity` and `toResponse`.
-- **Controller slice tests** using `@WebMvcTest` with the service mocked and the mapper imported with `@Import(TaskMapper.class)`: success status codes, validation errors (`400`) and not-found (`404`).
+- **Service unit tests** using JUnit 5 and Mockito (`@ExtendWith(MockitoExtension.class)`), with the repositories mocked and the real mapper injected as a `@Spy` (`new TaskMapperImpl()`, the class MapStruct generates): nominal cases, not-found cases, and any business rule.
+- **Mapper unit tests**: plain JUnit tests on the generated `...MapperImpl` checking `toEntity` and `toResponse`.
+- **Controller slice tests** using `@WebMvcTest` with the service mocked and returning DTOs: success status codes, validation errors (`400`), not-found (`404`) and business-rule conflicts (`409`). Import the project's `SecurityConfig` and add `@WithMockUser` when endpoints require authentication.
 
 Use `@SpringBootTest` only when the feature genuinely needs the full context (complex queries, transactional behavior). Use the import paths matching the project's Spring Boot version (see `references/testing-templates.md`).
 
