@@ -37,7 +37,7 @@ class LessonChangeRequestControllerTest {
     private static final String LEA = "lea.petit@horseco.test";
     private static final String URL = "/me/lesson-change-requests";
     private static final LessonChangeRequestResponseDto CREATED = new LessonChangeRequestResponseDto(30L,
-            1L, LocalDateTime.of(2026, 11, 2, 18, 0), LessonType.CSO,
+            "Léa", "Petit", 1L, LocalDateTime.of(2026, 11, 2, 18, 0), LessonType.CSO,
             2L, LocalDateTime.of(2026, 11, 4, 18, 0), LessonType.DRESS,
             "Dentist", LessonChangeRequestStatus.EN_ATTENTE, LocalDateTime.of(2026, 10, 31, 10, 0));
 

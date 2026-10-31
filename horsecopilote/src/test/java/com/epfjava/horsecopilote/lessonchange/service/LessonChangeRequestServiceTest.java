@@ -1,6 +1,8 @@
 package com.epfjava.horsecopilote.lessonchange.service;
 
 import com.epfjava.horsecopilote.common.service.BusinessRuleException;
+import com.epfjava.horsecopilote.common.service.ResourceNotFoundException;
+import com.epfjava.horsecopilote.horse.repository.Horse;
 import com.epfjava.horsecopilote.horse.repository.Location;
 import com.epfjava.horsecopilote.lesson.repository.Lesson;
 import com.epfjava.horsecopilote.lesson.repository.LessonBooking;
@@ -35,10 +37,12 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.TemporalAdjusters;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -171,6 +175,75 @@ class LessonChangeRequestServiceTest {
         assertThat(lessonChangeRequestService.getRequestsOfMember(LEA_EMAIL))
                 .extracting(LessonChangeRequestResponseDto::toLessonId)
                 .containsExactly(2L);
+    }
+
+    @Test
+    void acceptRequestMovesTheBookingToTheTargetLessonWithoutItsHorse() {
+        LessonBooking booking = from.getBookings().getFirst();
+        booking.assignHorse(mock(Horse.class));
+        LessonChangeRequest pending = pendingRequest();
+
+        LessonChangeRequestResponseDto result = lessonChangeRequestService.acceptRequest(30L);
+
+        assertThat(result.status()).isEqualTo(LessonChangeRequestStatus.ACCEPTEE);
+        assertThat(pending.getStatus()).isEqualTo(LessonChangeRequestStatus.ACCEPTEE);
+        assertThat(from.getBookings()).isEmpty();
+        assertThat(to.getBookings()).containsExactly(booking);
+        assertThat(booking.getLesson()).isSameAs(to);
+        assertThat(booking.getHorse()).isNull();
+    }
+
+    @Test
+    void acceptRequestChecksTheRulesAgain() {
+        LessonChangeRequest pending = pendingRequest();
+        ReflectionTestUtils.setField(to.getWeeklySlot(), "maxCapacity", 0);
+
+        assertThatThrownBy(() -> lessonChangeRequestService.acceptRequest(30L))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessage("Lesson 2 is full");
+        assertThat(pending.getStatus()).isEqualTo(LessonChangeRequestStatus.EN_ATTENTE);
+        assertThat(from.getBookings()).hasSize(1);
+    }
+
+    @Test
+    void refuseRequestKeepsTheBooking() {
+        pendingRequest();
+
+        assertThat(lessonChangeRequestService.refuseRequest(30L).status())
+                .isEqualTo(LessonChangeRequestStatus.REFUSEE);
+        assertThat(from.getBookings()).hasSize(1);
+    }
+
+    @Test
+    void decidingARequestThatIsNotPendingIsRejected() {
+        pendingRequest().refuse();
+
+        assertThatThrownBy(() -> lessonChangeRequestService.acceptRequest(30L))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessage("Lesson change request 30 is not pending");
+    }
+
+    @Test
+    void decidingAnUnknownRequestIsNotFound() {
+        assertThatThrownBy(() -> lessonChangeRequestService.refuseRequest(99L))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void getPendingRequestsReturnsTheRequestsWithTheMemberName() {
+        when(lessonChangeRequestRepository.findPendingUpcoming(any())).thenReturn(List.of(
+                new LessonChangeRequest(lea, from, to, "reason", LocalDateTime.now())));
+
+        assertThat(lessonChangeRequestService.getPendingRequests())
+                .extracting(LessonChangeRequestResponseDto::memberLastName)
+                .containsExactly("Petit");
+    }
+
+    private LessonChangeRequest pendingRequest() {
+        LessonChangeRequest pending = new LessonChangeRequest(lea, from, to, "reason", LocalDateTime.now());
+        ReflectionTestUtils.setField(pending, "id", 30L);
+        when(lessonChangeRequestRepository.findById(30L)).thenReturn(Optional.of(pending));
+        return pending;
     }
 
     private LessonChangeRequestRequestDto request() {

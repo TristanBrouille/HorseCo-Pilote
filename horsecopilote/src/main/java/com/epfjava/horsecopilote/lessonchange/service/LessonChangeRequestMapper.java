@@ -8,6 +8,8 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface LessonChangeRequestMapper {
 
+    @Mapping(target = "memberFirstName", source = "member.user.firstName")
+    @Mapping(target = "memberLastName", source = "member.user.lastName")
     @Mapping(target = "fromLessonId", source = "fromLesson.id")
     @Mapping(target = "fromStartDatetime", source = "fromLesson.startDatetime")
     @Mapping(target = "fromTopic", source = "fromLesson.topic")

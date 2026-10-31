@@ -60,4 +60,12 @@ public class LessonChangeRequest {
         this.status = LessonChangeRequestStatus.EN_ATTENTE;
         this.createdAt = createdAt;
     }
+
+    public void accept() {
+        this.status = LessonChangeRequestStatus.ACCEPTEE;
+    }
+
+    public void refuse() {
+        this.status = LessonChangeRequestStatus.REFUSEE;
+    }
 }

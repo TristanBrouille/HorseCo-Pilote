@@ -49,4 +49,11 @@ public class LessonBooking {
     public void unassignHorse() {
         this.horse = null;
     }
+
+    public void moveTo(Lesson target) {
+        lesson.getBookings().remove(this);
+        target.addBooking(this);
+        lesson = target;
+        horse = null; // the horse was assigned for the previous lesson
+    }
 }
