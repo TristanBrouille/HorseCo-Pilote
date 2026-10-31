@@ -1,5 +1,6 @@
 package com.epfjava.horsecopilote.reservation.presentation;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import com.epfjava.horsecopilote.reservation.service.ReservationService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +15,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 /** Lessons seen by the connected member: the member is always taken from the session. */
+@Tag(name = "Mes cours", description = "Les leçons de la semaine vues par le membre connecté")
 @RestController
 @RequestMapping("/me")
 public class ReservationController {

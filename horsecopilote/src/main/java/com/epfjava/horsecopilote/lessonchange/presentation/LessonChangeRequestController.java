@@ -1,5 +1,6 @@
 package com.epfjava.horsecopilote.lessonchange.presentation;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import com.epfjava.horsecopilote.lessonchange.service.LessonChangeRequestService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +17,7 @@ import java.net.URI;
 import java.util.List;
 
 /** Lesson change requests of the connected member: the member is always taken from the session. */
+@Tag(name = "Demandes de modification (membre)", description = "Le membre demande à changer de leçon dans la même semaine")
 @RestController
 @RequestMapping("/me/lesson-change-requests")
 public class LessonChangeRequestController {

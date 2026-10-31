@@ -1,5 +1,6 @@
 package com.epfjava.horsecopilote.weeklyslot.presentation;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import com.epfjava.horsecopilote.weeklyslot.service.WeeklySlotService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +18,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import java.net.URI;
 import java.util.List;
 
+@Tag(name = "Créneaux hebdomadaires", description = "Créneaux d'1 heure répétés chaque semaine et inscriptions annuelles des membres (admin)")
 @RestController
 @RequestMapping("/weekly-slots")
 public class WeeklySlotController {

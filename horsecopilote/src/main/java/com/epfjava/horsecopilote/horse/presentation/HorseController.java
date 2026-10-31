@@ -1,5 +1,6 @@
 package com.epfjava.horsecopilote.horse.presentation;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import com.epfjava.horsecopilote.horse.service.HorseService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +18,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import java.net.URI;
 import java.util.List;
 
+@Tag(name = "Chevaux", description = "CRUD de la cavalerie (admin) : statut, lieu, poids, heures de travail par jour")
 @RestController
 @RequestMapping("/horses")
 // Authorities hold the bare role name (no ROLE_ prefix), hence hasAuthority rather than hasRole.

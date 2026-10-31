@@ -1,5 +1,6 @@
 package com.epfjava.horsecopilote.security.presentation;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import com.epfjava.horsecopilote.security.service.AuthenticationService;
 import com.epfjava.horsecopilote.security.service.RegisterRequest;
 import com.epfjava.horsecopilote.security.service.UserLog;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 
 
+@Tag(name = "Authentification", description = "Connexion par session (login, utilisateur connecté) et création de comptes par l'admin")
 @RestController
 @RequestMapping("/")
 public class RegistrationLoginController {

@@ -1,5 +1,6 @@
 package com.epfjava.horsecopilote.lesson.presentation;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import com.epfjava.horsecopilote.lesson.service.LessonService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDate;
 import java.util.List;
 
+@Tag(name = "Leçons", description = "Agenda de la semaine, génération des leçons, sujet et lieu, attribution des chevaux (coach / admin)")
 @RestController
 @RequestMapping("/lessons")
 public class LessonController {
