@@ -21,7 +21,8 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(@NonNull String email) throws UsernameNotFoundException {
-        User user = userRepository.ofEmail(email);
+        // Emails are stored lower-cased (see MemberService), so match them case-insensitively.
+        User user = userRepository.ofEmail(email.trim().toLowerCase());
 
         if (user == null) {
             throw new UsernameNotFoundException("User not found with email: " + email);

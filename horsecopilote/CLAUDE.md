@@ -34,8 +34,8 @@ Commandes : `npm start` (ng serve) · `npm run build` · `npm test`
 
 ## 3. État actuel du code
 
-- Back : entités `User`, `WeeklySlot` et `Horse`, CRUD des créneaux hebdomadaires (`/weekly-slots`), CRUD des chevaux (`/horses`, admin) et liste des coachs (`/coaches`). Données de test en V2 (profil `dev`), évolution de schéma V3 pas encore faite. Authentification par session (`/login`, `/me`) : endpoints réservés aux utilisateurs connectés.
-- Front : écran admin des créneaux (`/admin/creneaux`, calendrier hebdomadaire jours × heures + modales), écran admin des chevaux (`/admin/chevaux`, grille AG Grid + modales), composants `hc-*` de base dans `decor/`.
+- Back : entités `User`, `Member`, `WeeklySlot` et `Horse`, CRUD des créneaux hebdomadaires (`/weekly-slots`), CRUD des chevaux (`/horses`, admin), liste et création des membres (`/members`, admin) et liste des coachs (`/coaches`). Données de test en V2 (profil `dev`), évolution de schéma V3 pas encore faite. Authentification par session (`/login`, `/me`) : endpoints réservés aux utilisateurs connectés.
+- Front : écran admin des créneaux (`/admin/creneaux`, calendrier hebdomadaire jours × heures + modales), écran admin des chevaux (`/admin/chevaux`, grille AG Grid + modales), écran admin des membres (`/admin/membres`, grille AG Grid + modale d’ajout), composants `hc-*` de base dans `decor/`.
 - Dépôts git à la racine des dossiers parents (`HorseCo-Pilote`, `HorseCo-Pilote-Front`).
 
 ## 4. Rôles
