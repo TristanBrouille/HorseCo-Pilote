@@ -44,6 +44,6 @@ class WeeklySlotMapperTest {
         WeeklySlotResponseDto response = weeklySlotMapper.toResponse(slot);
 
         assertThat(response).isEqualTo(new WeeklySlotResponseDto(1L, DayOfWeek.TUESDAY, LocalTime.of(17, 0),
-                LocalTime.of(18, 0), 10, 2, new CoachResponseDto(7L, "Claire", "Durand")));
+                LocalTime.of(18, 0), 10, 2, new CoachResponseDto(7L, "Claire", "Durand"), 0));
     }
 }

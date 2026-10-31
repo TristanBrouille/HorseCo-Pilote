@@ -11,6 +11,7 @@ public record WeeklySlotResponseDto(
         LocalTime endTime,
         int maxCapacity,
         int requiredLevel,
-        CoachResponseDto coach
+        CoachResponseDto coach,
+        int enrolledCount
 ) {
 }

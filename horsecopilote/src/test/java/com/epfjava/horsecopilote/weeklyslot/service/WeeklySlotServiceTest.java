@@ -1,5 +1,7 @@
 package com.epfjava.horsecopilote.weeklyslot.service;
 
+import com.epfjava.horsecopilote.member.repository.Member;
+import com.epfjava.horsecopilote.member.service.MemberService;
 import com.epfjava.horsecopilote.user.service.CoachMapperImpl;
 import com.epfjava.horsecopilote.user.service.UserService;
 import com.epfjava.horsecopilote.security.repository.Roles;
@@ -18,6 +20,7 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.math.BigDecimal;
 import java.time.DayOfWeek;
 import java.time.LocalTime;
 import java.util.List;
@@ -38,6 +41,9 @@ class WeeklySlotServiceTest {
 
     @Mock
     private UserService userService;
+
+    @Mock
+    private MemberService memberService;
 
     @Spy
     private WeeklySlotMapper weeklySlotMapper = new WeeklySlotMapperImpl(new CoachMapperImpl());
@@ -142,6 +148,148 @@ class WeeklySlotServiceTest {
         weeklySlotService.deleteSlot(1L);
 
         verify(weeklySlotRepository).deleteById(1L);
+    }
+
+    @Test
+    void addMemberEnrollsEligibleMember() {
+        WeeklySlot slot = slotWithId(1L, DayOfWeek.MONDAY, LocalTime.of(18, 0));
+        when(weeklySlotRepository.findWithInstructorById(1L)).thenReturn(Optional.of(slot));
+        when(memberService.getMember(5L)).thenReturn(memberWithId(5L, 3));
+        when(weeklySlotRepository.findByEnrollmentsMemberUserIdAndDayOfWeek(5L, DayOfWeek.MONDAY)).thenReturn(List.of());
+
+        assertThat(weeklySlotService.addMember(1L, 5L)).extracting("id").containsExactly(5L);
+    }
+
+    @Test
+    void addMemberRejectsAlreadyEnrolledMember() {
+        WeeklySlot slot = slotWithId(1L, DayOfWeek.MONDAY, LocalTime.of(18, 0));
+        Member member = memberWithId(5L, 3);
+        slot.enroll(member);
+        when(weeklySlotRepository.findWithInstructorById(1L)).thenReturn(Optional.of(slot));
+        when(memberService.getMember(5L)).thenReturn(member);
+
+        assertThatThrownBy(() -> weeklySlotService.addMember(1L, 5L))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("already enrolled");
+    }
+
+    @Test
+    void addMemberRejectsWhenSlotIsFull() {
+        WeeklySlot slot = new WeeklySlot(DayOfWeek.MONDAY, LocalTime.of(18, 0), 1, 3);
+        ReflectionTestUtils.setField(slot, "id", 1L);
+        slot.enroll(memberWithId(6L, 3));
+        when(weeklySlotRepository.findWithInstructorById(1L)).thenReturn(Optional.of(slot));
+        when(memberService.getMember(5L)).thenReturn(memberWithId(5L, 3));
+
+        assertThatThrownBy(() -> weeklySlotService.addMember(1L, 5L))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("full");
+    }
+
+    @Test
+    void addMemberRejectsMemberBelowRequiredLevel() {
+        when(weeklySlotRepository.findWithInstructorById(1L))
+                .thenReturn(Optional.of(slotWithId(1L, DayOfWeek.MONDAY, LocalTime.of(18, 0))));
+        when(memberService.getMember(5L)).thenReturn(memberWithId(5L, 2));
+
+        assertThatThrownBy(() -> weeklySlotService.addMember(1L, 5L))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("requires 3");
+    }
+
+    @Test
+    void addMemberRejectsMemberWithOverlappingSlot() {
+        when(weeklySlotRepository.findWithInstructorById(1L))
+                .thenReturn(Optional.of(slotWithId(1L, DayOfWeek.MONDAY, LocalTime.of(18, 0))));
+        when(memberService.getMember(5L)).thenReturn(memberWithId(5L, 3));
+        when(weeklySlotRepository.findByEnrollmentsMemberUserIdAndDayOfWeek(5L, DayOfWeek.MONDAY))
+                .thenReturn(List.of(slotWithId(2L, DayOfWeek.MONDAY, LocalTime.of(18, 30))));
+
+        assertThatThrownBy(() -> weeklySlotService.addMember(1L, 5L))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("overlapping");
+    }
+
+    @Test
+    void removeMemberUnenrollsMember() {
+        WeeklySlot slot = slotWithId(1L, DayOfWeek.MONDAY, LocalTime.of(18, 0));
+        slot.enroll(memberWithId(5L, 3));
+        when(weeklySlotRepository.findWithInstructorById(1L)).thenReturn(Optional.of(slot));
+
+        assertThat(weeklySlotService.removeMember(1L, 5L)).isEmpty();
+    }
+
+    @Test
+    void removeMemberThrowsWhenMemberIsNotEnrolled() {
+        when(weeklySlotRepository.findWithInstructorById(1L))
+                .thenReturn(Optional.of(slotWithId(1L, DayOfWeek.MONDAY, LocalTime.of(18, 0))));
+
+        assertThatThrownBy(() -> weeklySlotService.removeMember(1L, 5L))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void updateSlotRejectsCapacityBelowEnrolledCount() {
+        WeeklySlot slot = slotWithId(1L, DayOfWeek.MONDAY, LocalTime.of(18, 0));
+        slot.enroll(memberWithId(5L, 3));
+        slot.enroll(memberWithId(6L, 3));
+        when(weeklySlotRepository.findWithInstructorById(1L)).thenReturn(Optional.of(slot));
+        when(userService.getCoach(7L)).thenReturn(coach);
+        when(weeklySlotRepository.findByInstructorIdAndDayOfWeek(7L, DayOfWeek.MONDAY)).thenReturn(List.of(slot));
+
+        assertThatThrownBy(() -> weeklySlotService.updateSlot(1L,
+                new WeeklySlotRequestDto(7L, DayOfWeek.MONDAY, LocalTime.of(18, 0), 1, 3)))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("capacity");
+        assertThat(slot.getMaxCapacity()).isEqualTo(12);
+    }
+
+    @Test
+    void updateSlotRejectsRequiredLevelAboveEnrolledMember() {
+        WeeklySlot slot = slotWithId(1L, DayOfWeek.MONDAY, LocalTime.of(18, 0));
+        slot.enroll(memberWithId(5L, 3));
+        when(weeklySlotRepository.findWithInstructorById(1L)).thenReturn(Optional.of(slot));
+        when(userService.getCoach(7L)).thenReturn(coach);
+        when(weeklySlotRepository.findByInstructorIdAndDayOfWeek(7L, DayOfWeek.MONDAY)).thenReturn(List.of(slot));
+
+        assertThatThrownBy(() -> weeklySlotService.updateSlot(1L,
+                new WeeklySlotRequestDto(7L, DayOfWeek.MONDAY, LocalTime.of(18, 0), 12, 5)))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("requires 5");
+        assertThat(slot.getRequiredLevel()).isEqualTo(3);
+    }
+
+    @Test
+    void getEligibleMembersExcludesEnrolledLowLevelAndBusyMembers() {
+        WeeklySlot slot = slotWithId(1L, DayOfWeek.MONDAY, LocalTime.of(18, 0));
+        Member enrolled = memberWithId(5L, 4);
+        Member tooLow = memberWithId(6L, 2);
+        Member busy = memberWithId(7L, 4);
+        Member free = memberWithId(8L, 3);
+        slot.enroll(enrolled);
+        WeeklySlot overlapping = slotWithId(2L, DayOfWeek.MONDAY, LocalTime.of(18, 30));
+        overlapping.enroll(busy);
+        when(weeklySlotRepository.findWithInstructorById(1L)).thenReturn(Optional.of(slot));
+        when(weeklySlotRepository.findWithEnrollmentsByDayOfWeek(DayOfWeek.MONDAY)).thenReturn(List.of(slot, overlapping));
+        when(memberService.getAllMembers()).thenReturn(List.of(enrolled, tooLow, busy, free));
+
+        assertThat(weeklySlotService.getEligibleMembers(1L)).extracting("id").containsExactly(8L);
+    }
+
+    @Test
+    void getEligibleMembersIsEmptyWhenSlotIsFull() {
+        WeeklySlot slot = new WeeklySlot(DayOfWeek.MONDAY, LocalTime.of(18, 0), 1, 3);
+        ReflectionTestUtils.setField(slot, "id", 1L);
+        slot.enroll(memberWithId(5L, 3));
+        when(weeklySlotRepository.findWithInstructorById(1L)).thenReturn(Optional.of(slot));
+
+        assertThat(weeklySlotService.getEligibleMembers(1L)).isEmpty();
+    }
+
+    private static Member memberWithId(Long id, int galopLevel) {
+        Member member = new Member(userWithId(id, Roles.MEMBRE), galopLevel, 165, new BigDecimal("55.00"));
+        ReflectionTestUtils.setField(member, "userId", id);
+        return member;
     }
 
     private static WeeklySlotRequestDto request(LocalTime startTime, Long coachId) {

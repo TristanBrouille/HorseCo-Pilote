@@ -11,11 +11,16 @@ import java.util.Optional;
 @Repository
 public interface WeeklySlotRepository extends JpaRepository<WeeklySlot, Long> {
 
-    @EntityGraph(attributePaths = "instructor")
+    @EntityGraph(attributePaths = {"instructor", "enrollments"})
     List<WeeklySlot> findAllWithInstructorBy();
 
-    @EntityGraph(attributePaths = "instructor")
+    @EntityGraph(attributePaths = {"instructor", "enrollments.member.user"})
     Optional<WeeklySlot> findWithInstructorById(Long id);
 
     List<WeeklySlot> findByInstructorIdAndDayOfWeek(Long instructorId, DayOfWeek dayOfWeek);
+
+    @EntityGraph(attributePaths = "enrollments")
+    List<WeeklySlot> findWithEnrollmentsByDayOfWeek(DayOfWeek dayOfWeek);
+
+    List<WeeklySlot> findByEnrollmentsMemberUserIdAndDayOfWeek(Long memberId, DayOfWeek dayOfWeek);
 }
