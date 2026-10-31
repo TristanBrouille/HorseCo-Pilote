@@ -1,6 +1,8 @@
 package com.epfjava.horsecopilote.weeklyslot.service;
 
+import com.epfjava.horsecopilote.member.repository.Member;
 import com.epfjava.horsecopilote.user.service.CoachMapper;
+import com.epfjava.horsecopilote.weeklyslot.presentation.SlotMemberResponseDto;
 import com.epfjava.horsecopilote.weeklyslot.presentation.WeeklySlotRequestDto;
 import com.epfjava.horsecopilote.weeklyslot.presentation.WeeklySlotResponseDto;
 import com.epfjava.horsecopilote.weeklyslot.repository.WeeklySlot;
@@ -17,5 +19,11 @@ public interface WeeklySlotMapper {
     }
 
     @Mapping(target = "coach", source = "instructor")
+    @Mapping(target = "enrolledCount", expression = "java(slot.getEnrollments().size())")
     WeeklySlotResponseDto toResponse(WeeklySlot slot);
+
+    @Mapping(target = "id", source = "user.id")
+    @Mapping(target = "firstName", source = "user.firstName")
+    @Mapping(target = "lastName", source = "user.lastName")
+    SlotMemberResponseDto toMember(Member member);
 }

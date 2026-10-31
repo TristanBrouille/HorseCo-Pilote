@@ -198,8 +198,57 @@ class WeeklySlotControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
+    @Test
+    void addMemberReturnsUpdatedSlot() throws Exception {
+        when(weeklySlotService.addMember(1L, 5L)).thenReturn(List.of(new SlotMemberResponseDto(5L, "Lea", "Martin", 4)));
+
+        mockMvc.perform(post("/weekly-slots/1/members/5"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].galopLevel").value(4));
+    }
+
+    @Test
+    void getEligibleMembersReturnsCandidates() throws Exception {
+        when(weeklySlotService.getEligibleMembers(1L)).thenReturn(List.of(new SlotMemberResponseDto(5L, "Lea", "Martin", 4)));
+
+        mockMvc.perform(get("/weekly-slots/1/eligible-members"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(5));
+    }
+
+    @Test
+    @WithMockUser(authorities = "MEMBRE")
+    void getMembersIsForbiddenForNonAdmin() throws Exception {
+        mockMvc.perform(get("/weekly-slots/1/members")).andExpect(status().isForbidden());
+
+        verifyNoInteractions(weeklySlotService);
+    }
+
+    @Test
+    void addMemberReturns409WhenRuleIsBroken() throws Exception {
+        when(weeklySlotService.addMember(1L, 5L)).thenThrow(new BusinessRuleException("Slot is full"));
+
+        mockMvc.perform(post("/weekly-slots/1/members/5")).andExpect(status().isConflict());
+    }
+
+    @Test
+    void removeMemberReturns200() throws Exception {
+        when(weeklySlotService.removeMember(1L, 5L)).thenReturn(List.of());
+
+        mockMvc.perform(delete("/weekly-slots/1/members/5")).andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(authorities = "MEMBRE")
+    void addMemberIsForbiddenForNonAdmin() throws Exception {
+        mockMvc.perform(post("/weekly-slots/1/members/5")).andExpect(status().isForbidden());
+
+        verifyNoInteractions(weeklySlotService);
+    }
+
     private static WeeklySlotResponseDto slotWithId(Long id) {
         return new WeeklySlotResponseDto(id, DayOfWeek.MONDAY, LocalTime.of(18, 0), LocalTime.of(19, 0), 12, 3,
-                new CoachResponseDto(7L, "Claire", "Durand"));
+                new CoachResponseDto(7L, "Claire", "Durand"), 0);
     }
 }

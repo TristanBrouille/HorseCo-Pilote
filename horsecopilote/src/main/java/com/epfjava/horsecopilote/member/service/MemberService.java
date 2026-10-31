@@ -1,6 +1,7 @@
 package com.epfjava.horsecopilote.member.service;
 
 import com.epfjava.horsecopilote.common.service.BusinessRuleException;
+import com.epfjava.horsecopilote.common.service.ResourceNotFoundException;
 import com.epfjava.horsecopilote.member.presentation.MemberRequestDto;
 import com.epfjava.horsecopilote.member.presentation.MemberResponseDto;
 import com.epfjava.horsecopilote.member.repository.Member;
@@ -35,6 +36,15 @@ public class MemberService {
         return memberRepository.findAllByOrderByUserLastNameAscUserFirstNameAsc().stream()
                 .map(memberMapper::toResponse)
                 .toList();
+    }
+
+    public List<Member> getAllMembers() {
+        return memberRepository.findAllByOrderByUserLastNameAscUserFirstNameAsc();
+    }
+
+    public Member getMember(Long id) {
+        return memberRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Member", id));
     }
 
     @Transactional

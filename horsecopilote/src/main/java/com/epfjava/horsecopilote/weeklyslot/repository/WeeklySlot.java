@@ -1,6 +1,8 @@
 package com.epfjava.horsecopilote.weeklyslot.repository;
 
+import com.epfjava.horsecopilote.member.repository.Member;
 import com.epfjava.horsecopilote.security.repository.User;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -11,6 +13,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -19,6 +22,8 @@ import lombok.NoArgsConstructor;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "weekly_slot")
@@ -52,6 +57,9 @@ public class WeeklySlot {
     @Column(nullable = false)
     private int requiredLevel;
 
+    @OneToMany(mappedBy = "weeklySlot", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<WeeklySlotMember> enrollments = new ArrayList<>();
+
     public WeeklySlot(DayOfWeek dayOfWeek, LocalTime startTime, int maxCapacity, int requiredLevel) {
         this.dayOfWeek = dayOfWeek;
         this.startTime = startTime;
@@ -70,6 +78,18 @@ public class WeeklySlot {
         this.startTime = changes.startTime;
         this.maxCapacity = changes.maxCapacity;
         this.requiredLevel = changes.requiredLevel;
+    }
+
+    public boolean isEnrolled(Long memberId) {
+        return enrollments.stream().anyMatch(enrollment -> enrollment.getMember().getUserId().equals(memberId));
+    }
+
+    public void enroll(Member member) {
+        enrollments.add(new WeeklySlotMember(this, member));
+    }
+
+    public void unenroll(Long memberId) {
+        enrollments.removeIf(enrollment -> enrollment.getMember().getUserId().equals(memberId));
     }
 
     public LocalTime getEndTime() {

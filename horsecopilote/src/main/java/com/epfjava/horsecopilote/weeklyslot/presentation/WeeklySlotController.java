@@ -64,4 +64,29 @@ public class WeeklySlotController {
         weeklySlotService.deleteSlot(id);
         return ResponseEntity.noContent().build();
     }
+
+    // Participants stay admin-only: a member must not see the other riders of a slot (R6).
+    @PreAuthorize(ADMIN_ONLY)
+    @GetMapping("/{id}/members")
+    public ResponseEntity<List<SlotMemberResponseDto>> getMembers(@PathVariable Long id) {
+        return ResponseEntity.ok(weeklySlotService.getMembers(id));
+    }
+
+    @PreAuthorize(ADMIN_ONLY)
+    @GetMapping("/{id}/eligible-members")
+    public ResponseEntity<List<SlotMemberResponseDto>> getEligibleMembers(@PathVariable Long id) {
+        return ResponseEntity.ok(weeklySlotService.getEligibleMembers(id));
+    }
+
+    @PreAuthorize(ADMIN_ONLY)
+    @PostMapping("/{id}/members/{memberId}")
+    public ResponseEntity<List<SlotMemberResponseDto>> addMember(@PathVariable Long id, @PathVariable Long memberId) {
+        return ResponseEntity.ok(weeklySlotService.addMember(id, memberId));
+    }
+
+    @PreAuthorize(ADMIN_ONLY)
+    @DeleteMapping("/{id}/members/{memberId}")
+    public ResponseEntity<List<SlotMemberResponseDto>> removeMember(@PathVariable Long id, @PathVariable Long memberId) {
+        return ResponseEntity.ok(weeklySlotService.removeMember(id, memberId));
+    }
 }
