@@ -2,6 +2,8 @@ package com.epfjava.horsecopilote.lesson.service;
 
 import com.epfjava.horsecopilote.horse.repository.Horse;
 import com.epfjava.horsecopilote.lesson.presentation.AssignedHorseResponseDto;
+import com.epfjava.horsecopilote.lesson.presentation.HorseOptionResponseDto;
+import com.epfjava.horsecopilote.lesson.presentation.HorseUnavailabilityReason;
 import com.epfjava.horsecopilote.lesson.presentation.LessonParticipantResponseDto;
 import com.epfjava.horsecopilote.lesson.presentation.LessonResponseDto;
 import com.epfjava.horsecopilote.lesson.repository.Lesson;
@@ -33,4 +35,8 @@ public interface LessonMapper {
     LessonParticipantResponseDto toParticipant(LessonBooking booking);
 
     AssignedHorseResponseDto toHorse(Horse horse);
+
+    @Mapping(target = "selectable", expression = "java(reason == null)")
+    HorseOptionResponseDto toHorseOption(Horse horse, int hoursToday, boolean assigned,
+                                         HorseUnavailabilityReason reason);
 }

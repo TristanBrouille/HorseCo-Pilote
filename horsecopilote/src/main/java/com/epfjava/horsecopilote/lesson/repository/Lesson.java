@@ -75,6 +75,18 @@ public class Lesson {
         bookings.add(booking);
     }
 
+    public void changeTopic(LessonType topic) {
+        this.topic = topic;
+    }
+
+    public boolean isGivenBy(User coach) {
+        return instructor.getId().equals(coach.getId());
+    }
+
+    public boolean overlaps(Lesson other) {
+        return startDatetime.isBefore(other.getEndDatetime()) && other.startDatetime.isBefore(getEndDatetime());
+    }
+
     public LocalDateTime getEndDatetime() {
         return startDatetime.plusMinutes(DURATION_MINUTES);
     }
