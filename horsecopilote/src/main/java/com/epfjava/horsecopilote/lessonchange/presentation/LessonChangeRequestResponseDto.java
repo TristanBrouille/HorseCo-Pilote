@@ -7,6 +7,8 @@ import java.time.LocalDateTime;
 
 public record LessonChangeRequestResponseDto(
         Long id,
+        String memberFirstName,
+        String memberLastName,
         Long fromLessonId,
         LocalDateTime fromStartDatetime,
         LessonType fromTopic,
