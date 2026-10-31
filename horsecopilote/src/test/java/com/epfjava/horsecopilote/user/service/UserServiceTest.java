@@ -55,4 +55,30 @@ class UserServiceTest {
 
         assertThat(userService.getCoaches()).containsExactly(new CoachResponseDto(2L, "Claire", "Durand"));
     }
+
+    @Test
+    void getCoachByEmailReturnsCoach() {
+        User coach = new User(2L, Roles.COACH, "Durand", "Claire", "claire@example.com", "secret");
+        when(userRepository.ofEmail("claire@example.com")).thenReturn(coach);
+
+        assertThat(userService.getCoachByEmail("claire@example.com")).isSameAs(coach);
+    }
+
+    @Test
+    void getCoachByEmailThrowsWhenUserIsNotACoach() {
+        User member = new User(5L, Roles.MEMBRE, "Petit", "Léa", "lea@example.com", "secret");
+        when(userRepository.ofEmail("lea@example.com")).thenReturn(member);
+
+        assertThatThrownBy(() -> userService.getCoachByEmail("lea@example.com"))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Coach with email lea@example.com not found");
+    }
+
+    @Test
+    void getCoachByEmailThrowsWhenUserDoesNotExist() {
+        when(userRepository.ofEmail("unknown@example.com")).thenReturn(null);
+
+        assertThatThrownBy(() -> userService.getCoachByEmail("unknown@example.com"))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
 }

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Transactional(readOnly = true)
@@ -31,5 +32,11 @@ public class UserService {
     public User getCoach(Long id) {
         return userRepository.ofIdAndRole(id, Roles.COACH)
                 .orElseThrow(() -> new ResourceNotFoundException("Coach", id));
+    }
+
+    public User getCoachByEmail(String email) {
+        return Optional.ofNullable(userRepository.ofEmail(email))
+                .filter(user -> user.getRole() == Roles.COACH)
+                .orElseThrow(() -> new ResourceNotFoundException("Coach with email " + email + " not found"));
     }
 }
