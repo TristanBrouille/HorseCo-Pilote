@@ -1,5 +1,6 @@
 package com.epfjava.horsecopilote.lesson.repository;
 
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -7,6 +8,7 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Repository
@@ -25,6 +27,9 @@ public interface LessonRepository extends JpaRepository<Lesson, Long> {
             order by lesson.startDatetime, lesson.id, user.lastName, user.firstName
             """)
     List<Lesson> findWithParticipantsBetween(LocalDateTime from, LocalDateTime to);
+
+    @EntityGraph(attributePaths = {"weeklySlot", "bookings"})
+    Optional<Lesson> findWithBookingsById(Long id);
 
     @Query("""
             select lesson.id from Lesson lesson

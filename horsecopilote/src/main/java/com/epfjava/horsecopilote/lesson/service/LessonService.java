@@ -1,5 +1,6 @@
 package com.epfjava.horsecopilote.lesson.service;
 
+import com.epfjava.horsecopilote.common.service.ResourceNotFoundException;
 import com.epfjava.horsecopilote.lesson.presentation.LessonResponseDto;
 import com.epfjava.horsecopilote.lesson.repository.Lesson;
 import com.epfjava.horsecopilote.lesson.repository.LessonRepository;
@@ -45,6 +46,11 @@ public class LessonService {
                 .map(lesson -> lessonMapper.toResponse(lesson, isGivenBy(lesson, coach),
                         lessonIdsWithPendingMembers.contains(lesson.getId())))
                 .toList();
+    }
+
+    public Lesson getLessonWithBookings(Long id) {
+        return lessonRepository.findWithBookingsById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Lesson", id));
     }
 
     private boolean isGivenBy(Lesson lesson, User coach) {
