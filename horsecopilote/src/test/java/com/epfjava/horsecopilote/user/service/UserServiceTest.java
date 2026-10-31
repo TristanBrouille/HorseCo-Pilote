@@ -81,4 +81,30 @@ class UserServiceTest {
         assertThatThrownBy(() -> userService.getCoachByEmail("unknown@example.com"))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
+
+    @Test
+    void getMemberByEmailReturnsMember() {
+        User member = new User(5L, Roles.MEMBRE, "Petit", "Léa", "lea@example.com", "secret");
+        when(userRepository.ofEmail("lea@example.com")).thenReturn(member);
+
+        assertThat(userService.getMemberByEmail("lea@example.com")).isSameAs(member);
+    }
+
+    @Test
+    void getMemberByEmailThrowsWhenUserIsNotAMember() {
+        User coach = new User(2L, Roles.COACH, "Durand", "Claire", "claire@example.com", "secret");
+        when(userRepository.ofEmail("claire@example.com")).thenReturn(coach);
+
+        assertThatThrownBy(() -> userService.getMemberByEmail("claire@example.com"))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Member with email claire@example.com not found");
+    }
+
+    @Test
+    void getMemberByEmailThrowsWhenUserDoesNotExist() {
+        when(userRepository.ofEmail("unknown@example.com")).thenReturn(null);
+
+        assertThatThrownBy(() -> userService.getMemberByEmail("unknown@example.com"))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
 }

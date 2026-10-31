@@ -39,4 +39,10 @@ public class UserService {
                 .filter(user -> user.getRole() == Roles.COACH)
                 .orElseThrow(() -> new ResourceNotFoundException("Coach with email " + email + " not found"));
     }
+
+    public User getMemberByEmail(String email) {
+        return Optional.ofNullable(userRepository.ofEmail(email))
+                .filter(user -> user.getRole() == Roles.MEMBRE)
+                .orElseThrow(() -> new ResourceNotFoundException("Member with email " + email + " not found"));
+    }
 }
