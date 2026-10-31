@@ -34,7 +34,7 @@ class LessonMapperTest {
     void toResponseCopiesLessonFieldsCoachAndFlags() {
         Lesson lesson = lesson();
 
-        LessonResponseDto response = lessonMapper.toResponse(lesson, true, true);
+        LessonResponseDto response = lessonMapper.toResponse(lesson, true, true, true);
 
         assertThat(response.id()).isEqualTo(4L);
         assertThat(response.weeklySlotId()).isEqualTo(9L);
@@ -45,6 +45,7 @@ class LessonMapperTest {
         assertThat(response.status()).isEqualTo(LessonStatus.PREVUE);
         assertThat(response.coach()).isEqualTo(new CoachResponseDto(2L, "Sophie", "Martin"));
         assertThat(response.mine()).isTrue();
+        assertThat(response.editable()).isTrue();
         assertThat(response.hasPendingMembers()).isTrue();
     }
 
@@ -52,7 +53,7 @@ class LessonMapperTest {
     void toResponseListsParticipantsOfOwnLessonWithAssignedOrMissingHorse() {
         Lesson lesson = lessonWithTwoParticipants();
 
-        LessonResponseDto response = lessonMapper.toResponse(lesson, true, false);
+        LessonResponseDto response = lessonMapper.toResponse(lesson, true, true, false);
 
         assertThat(response.participantCount()).isEqualTo(2);
         assertThat(response.participants()).containsExactly(
@@ -61,10 +62,21 @@ class LessonMapperTest {
     }
 
     @Test
+    void toResponseListsParticipantsForAnAdminWhoDoesNotGiveTheLesson() {
+        Lesson lesson = lessonWithTwoParticipants();
+
+        LessonResponseDto response = lessonMapper.toResponse(lesson, false, true, false);
+
+        assertThat(response.mine()).isFalse();
+        assertThat(response.editable()).isTrue();
+        assertThat(response.participants()).hasSize(2);
+    }
+
+    @Test
     void toResponseHidesParticipantsOfAnotherCoachLessonButKeepsTheirCount() {
         Lesson lesson = lessonWithTwoParticipants();
 
-        LessonResponseDto response = lessonMapper.toResponse(lesson, false, false);
+        LessonResponseDto response = lessonMapper.toResponse(lesson, false, false, false);
 
         assertThat(response.mine()).isFalse();
         assertThat(response.participantCount()).isEqualTo(2);
@@ -76,7 +88,7 @@ class LessonMapperTest {
         Lesson lesson = new Lesson(null, coach(), Location.MANEGE, LocalDateTime.of(2026, 10, 12, 18, 0),
                 LessonType.CSO, LessonStatus.ANNULEE);
 
-        assertThat(lessonMapper.toResponse(lesson, true, false).weeklySlotId()).isNull();
+        assertThat(lessonMapper.toResponse(lesson, true, true, false).weeklySlotId()).isNull();
     }
 
     private Lesson lessonWithTwoParticipants() {

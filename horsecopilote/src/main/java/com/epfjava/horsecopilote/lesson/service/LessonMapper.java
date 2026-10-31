@@ -21,10 +21,11 @@ public interface LessonMapper {
     @Mapping(target = "weeklySlotId", source = "lesson.weeklySlot.id")
     @Mapping(target = "coach", source = "lesson.instructor")
     @Mapping(target = "mine", source = "mine")
+    @Mapping(target = "editable", source = "editable")
     @Mapping(target = "hasPendingMembers", source = "hasPendingMembers")
     @Mapping(target = "participantCount", expression = "java(lesson.getBookings().size())")
-    @Mapping(target = "participants", expression = "java(mine ? toParticipants(lesson.getBookings()) : null)")
-    LessonResponseDto toResponse(Lesson lesson, boolean mine, boolean hasPendingMembers);
+    @Mapping(target = "participants", expression = "java(editable ? toParticipants(lesson.getBookings()) : null)")
+    LessonResponseDto toResponse(Lesson lesson, boolean mine, boolean editable, boolean hasPendingMembers);
 
     List<LessonParticipantResponseDto> toParticipants(List<LessonBooking> bookings);
 

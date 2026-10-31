@@ -18,6 +18,8 @@ public record LessonResponseDto(
         LessonStatus status,
         CoachResponseDto coach,
         boolean mine,
+        // true for the coach of the lesson and for an admin: they see the participants and may edit it
+        boolean editable,
         boolean hasPendingMembers,
         int participantCount,
         List<LessonParticipantResponseDto> participants
