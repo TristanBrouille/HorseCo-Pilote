@@ -16,8 +16,7 @@ public record MemberRequestDto(
         @NotBlank @Size(max = 100) String firstName,
         @NotBlank @Size(max = 100) String lastName,
         @NotBlank @Email @Size(max = 255) String email,
-        // BCrypt ignores everything after 72 bytes.
-        @NotBlank @Size(min = 8, max = 72) String password,
+        @NotBlank @Size(min = 8) String password,
         @NotNull @Min(0) @Max(7) Integer galopLevel,
         @NotNull @Min(80) @Max(220) Integer heightCm,
         @NotNull @DecimalMin("15") @DecimalMax("150") @Digits(integer = 3, fraction = 2) BigDecimal weightKg
