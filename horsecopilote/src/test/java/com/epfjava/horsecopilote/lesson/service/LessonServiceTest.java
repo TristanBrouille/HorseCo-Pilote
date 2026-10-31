@@ -12,7 +12,7 @@ import com.epfjava.horsecopilote.lesson.presentation.HorseUnavailabilityReason;
 import com.epfjava.horsecopilote.lesson.presentation.LessonGenerationRequestDto;
 import com.epfjava.horsecopilote.lesson.presentation.LessonGenerationResponseDto;
 import com.epfjava.horsecopilote.lesson.presentation.LessonResponseDto;
-import com.epfjava.horsecopilote.lesson.presentation.LessonTopicRequestDto;
+import com.epfjava.horsecopilote.lesson.presentation.LessonDetailsRequestDto;
 import com.epfjava.horsecopilote.lesson.presentation.LessonUpdateRequestDto;
 import com.epfjava.horsecopilote.lesson.repository.Lesson;
 import com.epfjava.horsecopilote.lesson.repository.LessonBooking;
@@ -173,15 +173,17 @@ class LessonServiceTest {
     }
 
     @Test
-    void updateTopicChangesTheTopicOfAnOwnPlannedLesson() {
+    void updateDetailsSetsTheTopicAndLocationOfAnOwnPlannedLesson() {
         Lesson own = lesson(4L, sophie, LessonFixtures.WEDNESDAY_17H, LessonStatus.PREVUE);
         givenOwnLesson(own);
 
-        LessonResponseDto result = lessonService.updateTopic(SOPHIE_EMAIL, 4L,
-                new LessonTopicRequestDto(LessonType.DRESS));
+        LessonResponseDto result = lessonService.updateDetails(SOPHIE_EMAIL, 4L,
+                new LessonDetailsRequestDto(LessonType.DRESS, Location.MANEGE));
 
         assertThat(own.getTopic()).isEqualTo(LessonType.DRESS);
+        assertThat(own.getLocation()).isEqualTo(Location.MANEGE);
         assertThat(result.topic()).isEqualTo(LessonType.DRESS);
+        assertThat(result.location()).isEqualTo(Location.MANEGE);
         assertThat(result.mine()).isTrue();
     }
 
@@ -191,8 +193,8 @@ class LessonServiceTest {
         when(userService.getStaffByEmail(SOPHIE_EMAIL)).thenReturn(sophie);
         when(lessonRepository.findWithParticipantsById(3L)).thenReturn(Optional.of(other));
 
-        assertThatThrownBy(() -> lessonService.updateTopic(SOPHIE_EMAIL, 3L,
-                new LessonTopicRequestDto(LessonType.DRESS)))
+        assertThatThrownBy(() -> lessonService.updateDetails(SOPHIE_EMAIL, 3L,
+                new LessonDetailsRequestDto(LessonType.DRESS, Location.MANEGE)))
                 .isInstanceOf(AccessDeniedException.class);
         assertThat(other.getTopic()).isEqualTo(LessonType.CSO);
     }
@@ -203,8 +205,8 @@ class LessonServiceTest {
         when(userService.getStaffByEmail(SOPHIE_EMAIL)).thenReturn(sophie);
         when(lessonRepository.findWithParticipantsById(4L)).thenReturn(Optional.of(cancelled));
 
-        assertThatThrownBy(() -> lessonService.updateTopic(SOPHIE_EMAIL, 4L,
-                new LessonTopicRequestDto(LessonType.DRESS)))
+        assertThatThrownBy(() -> lessonService.updateDetails(SOPHIE_EMAIL, 4L,
+                new LessonDetailsRequestDto(LessonType.DRESS, Location.MANEGE)))
                 .isInstanceOf(BusinessRuleException.class);
     }
 
@@ -213,8 +215,8 @@ class LessonServiceTest {
         when(userService.getStaffByEmail(SOPHIE_EMAIL)).thenReturn(sophie);
         when(lessonRepository.findWithParticipantsById(99L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> lessonService.updateTopic(SOPHIE_EMAIL, 99L,
-                new LessonTopicRequestDto(LessonType.DRESS)))
+        assertThatThrownBy(() -> lessonService.updateDetails(SOPHIE_EMAIL, 99L,
+                new LessonDetailsRequestDto(LessonType.DRESS, Location.MANEGE)))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 
@@ -411,8 +413,7 @@ class LessonServiceTest {
                 LocalDateTime.of(2026, 11, 19, 0, 0))).thenReturn(List.of());
 
         LessonGenerationResponseDto result = lessonService.generateLessons(
-                new LessonGenerationRequestDto(LocalDate.of(2026, 11, 18), LessonType.DRESS, Location.MANEGE),
-                SATURDAY_10H);
+                new LessonGenerationRequestDto(LocalDate.of(2026, 11, 18)), SATURDAY_10H);
 
         assertThat(result).isEqualTo(new LessonGenerationResponseDto(
                 LocalDate.of(2026, 10, 31), LocalDate.of(2026, 11, 18), 5, 0, 0));
@@ -425,8 +426,9 @@ class LessonServiceTest {
                 LocalDateTime.of(2026, 11, 7, 9, 0),
                 LocalDateTime.of(2026, 11, 14, 9, 0));
         assertThat(saved).allSatisfy(lesson -> {
-            assertThat(lesson.getTopic()).isEqualTo(LessonType.DRESS);
-            assertThat(lesson.getLocation()).isEqualTo(Location.MANEGE);
+            // the coach defines them later
+            assertThat(lesson.getTopic()).isNull();
+            assertThat(lesson.getLocation()).isNull();
             assertThat(lesson.getStatus()).isEqualTo(LessonStatus.PREVUE);
             assertThat(lesson.getBookings()).isEmpty();
         });
@@ -445,8 +447,7 @@ class LessonServiceTest {
         when(lessonRepository.findStartingBetween(any(), any())).thenReturn(List.of());
 
         LessonGenerationResponseDto result = lessonService.generateLessons(
-                new LessonGenerationRequestDto(LocalDate.of(2026, 11, 11), LessonType.CSO, Location.CARRIERE),
-                SATURDAY_10H);
+                new LessonGenerationRequestDto(LocalDate.of(2026, 11, 11)), SATURDAY_10H);
 
         assertThat(result.createdCount()).isEqualTo(2);
         assertThat(result.bookingCount()).isEqualTo(4);
@@ -470,8 +471,7 @@ class LessonServiceTest {
                 .thenReturn(List.of(alreadyCancelled, otherLessonOfSophie));
 
         LessonGenerationResponseDto result = lessonService.generateLessons(
-                new LessonGenerationRequestDto(LocalDate.of(2026, 11, 18), LessonType.CSO, Location.CARRIERE),
-                SATURDAY_10H);
+                new LessonGenerationRequestDto(LocalDate.of(2026, 11, 18)), SATURDAY_10H);
 
         assertThat(result.createdCount()).isEqualTo(1);
         assertThat(result.skippedCount()).isEqualTo(2);
@@ -482,8 +482,7 @@ class LessonServiceTest {
     @Test
     void generateLessonsRefusesAnEndDateInThePast() {
         assertThatThrownBy(() -> lessonService.generateLessons(
-                new LessonGenerationRequestDto(LocalDate.of(2026, 10, 30), LessonType.CSO, Location.CARRIERE),
-                SATURDAY_10H))
+                new LessonGenerationRequestDto(LocalDate.of(2026, 10, 30)), SATURDAY_10H))
                 .isInstanceOf(BusinessRuleException.class);
         verifyNoInteractions(lessonRepository, weeklySlotService);
     }
@@ -491,8 +490,7 @@ class LessonServiceTest {
     @Test
     void generateLessonsRefusesAnEndDateMoreThanOneYearAhead() {
         assertThatThrownBy(() -> lessonService.generateLessons(
-                new LessonGenerationRequestDto(LocalDate.of(2027, 11, 1), LessonType.CSO, Location.CARRIERE),
-                SATURDAY_10H))
+                new LessonGenerationRequestDto(LocalDate.of(2027, 11, 1)), SATURDAY_10H))
                 .isInstanceOf(BusinessRuleException.class);
         verifyNoInteractions(lessonRepository, weeklySlotService);
     }
