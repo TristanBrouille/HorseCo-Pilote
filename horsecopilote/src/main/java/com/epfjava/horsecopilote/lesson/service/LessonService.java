@@ -62,6 +62,11 @@ public class LessonService {
                 .toList();
     }
 
+    public Lesson getLessonWithBookings(Long id) {
+        return lessonRepository.findWithBookingsById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Lesson", id));
+    }
+
     public List<HorseOptionResponseDto> getHorseOptions(String coachEmail, Long lessonId, Long memberId) {
         LessonBooking booking = findParticipant(findOwnLesson(coachEmail, lessonId), memberId);
         List<LessonBooking> bookingsOfDay = findHorseBookingsOfDay(booking.getLesson());
