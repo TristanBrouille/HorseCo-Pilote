@@ -1,5 +1,6 @@
 package com.epfjava.horsecopilote.lessonchange.presentation;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import com.epfjava.horsecopilote.lessonchange.service.LessonChangeRequestService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /** Manager side of the lesson change requests: review the pending ones and decide. */
+@Tag(name = "Demandes de modification (admin)", description = "L'admin accepte ou refuse les demandes de changement de leçon")
 @RestController
 @RequestMapping("/lesson-change-requests")
 @PreAuthorize("hasAuthority('ADMIN')")

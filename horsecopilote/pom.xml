@@ -29,6 +29,7 @@
 	<properties>
 		<java.version>25</java.version>
 		<mapstruct.version>1.6.3</mapstruct.version>
+		<springdoc.version>3.1.1</springdoc.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -76,6 +77,12 @@
 			<groupId>org.mapstruct</groupId>
 			<artifactId>mapstruct</artifactId>
 			<version>${mapstruct.version}</version>
+		</dependency>
+		<!-- API documentation: Swagger UI on /swagger-ui.html, OpenAPI JSON on /v3/api-docs -->
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+			<version>${springdoc.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

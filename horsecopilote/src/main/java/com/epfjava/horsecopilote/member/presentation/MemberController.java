@@ -1,5 +1,6 @@
 package com.epfjava.horsecopilote.member.presentation;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import com.epfjava.horsecopilote.member.service.MemberService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +15,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import java.net.URI;
 import java.util.List;
 
+@Tag(name = "Membres", description = "Liste et création des cavaliers (admin)")
 @RestController
 @RequestMapping("/members")
 // Authorities hold the bare role name (no ROLE_ prefix), hence hasAuthority rather than hasRole.
