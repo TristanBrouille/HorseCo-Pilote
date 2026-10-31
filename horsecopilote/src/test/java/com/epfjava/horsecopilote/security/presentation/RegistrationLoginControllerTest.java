@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -15,8 +16,11 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -54,5 +58,21 @@ class RegistrationLoginControllerTest {
         mockMvc.perform(post("/login").contentType(MediaType.APPLICATION_JSON).content(CREDENTIALS))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.detail").value("Invalid email or password"));
+    }
+
+    @Test
+    void logoutReturns200AndInvalidatesTheSession() throws Exception {
+        MockHttpSession session = new MockHttpSession();
+
+        mockMvc.perform(post("/logout").session(session).with(user("admin@horseco.test").authorities(() -> "ADMIN")))
+                .andExpect(status().isOk())
+                .andExpect(cookie().maxAge("JSESSIONID", 0));
+
+        assertThat(session.isInvalid()).isTrue();
+    }
+
+    @Test
+    void logoutReturns200EvenWhenNotAuthenticated() throws Exception {
+        mockMvc.perform(post("/logout")).andExpect(status().isOk());
     }
 }
