@@ -45,6 +45,24 @@ public interface LessonRepository extends JpaRepository<Lesson, Long> {
     Optional<Lesson> findWithParticipantsById(Long id);
 
     @Query("""
+            select lesson from Lesson lesson
+            join fetch lesson.instructor
+            left join fetch lesson.weeklySlot
+            where lesson.startDatetime >= :from
+              and lesson.startDatetime < :to
+            """)
+    List<Lesson> findStartingBetween(LocalDateTime from, LocalDateTime to);
+
+    @Query("""
+            select lesson from Lesson lesson
+            where lesson.instructor.id = :coachId
+              and lesson.status <> com.epfjava.horsecopilote.lesson.repository.LessonStatus.ANNULEE
+              and lesson.startDatetime > :from
+              and lesson.startDatetime < :to
+            """)
+    List<Lesson> findActiveOfCoachStartingBetween(Long coachId, LocalDateTime from, LocalDateTime to);
+
+    @Query("""
             select booking from LessonBooking booking
             join fetch booking.lesson lesson
             join fetch booking.horse

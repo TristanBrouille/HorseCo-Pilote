@@ -40,6 +40,13 @@ public class UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("Coach with email " + email + " not found"));
     }
 
+    /** A coach or an admin: the users who can open the lesson calendar. */
+    public User getStaffByEmail(String email) {
+        return Optional.ofNullable(userRepository.ofEmail(email))
+                .filter(user -> user.getRole() == Roles.COACH || user.getRole() == Roles.ADMIN)
+                .orElseThrow(() -> new ResourceNotFoundException("Coach or admin with email " + email + " not found"));
+    }
+
     public User getMemberByEmail(String email) {
         return Optional.ofNullable(userRepository.ofEmail(email))
                 .filter(user -> user.getRole() == Roles.MEMBRE)

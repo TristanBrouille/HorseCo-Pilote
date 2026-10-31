@@ -37,6 +37,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -61,13 +62,14 @@ class LessonControllerTest {
     @Test
     @WithMockUser(username = SOPHIE, authorities = "COACH")
     void getLessonsOfWeekReturnsOwnLessonsWithParticipantsAndOthersWithout() throws Exception {
-        when(lessonService.getLessonsOfWeekForCoach(SOPHIE, WEEK)).thenReturn(List.of(
+        when(lessonService.getLessonsOfWeek(SOPHIE, WEEK)).thenReturn(List.of(
                 new LessonResponseDto(3L, 3L, LocalDateTime.of(2026, 10, 14, 14, 0),
                         LocalDateTime.of(2026, 10, 14, 15, 0), Location.MANEGE, LessonType.MISE_EN_SELLE,
-                        LessonStatus.PREVUE, new CoachResponseDto(3L, "Marc", "Lefèvre"), false, false, 2, null),
+                        LessonStatus.PREVUE, new CoachResponseDto(3L, "Marc", "Lefèvre"), false, false, false, 2,
+                        null),
                 new LessonResponseDto(4L, 4L, LocalDateTime.of(2026, 10, 14, 17, 0),
                         LocalDateTime.of(2026, 10, 14, 18, 0), Location.CARRIERE, LessonType.CSO,
-                        LessonStatus.PREVUE, new CoachResponseDto(4L, "Sophie", "Martin"), true, true, 2,
+                        LessonStatus.PREVUE, new CoachResponseDto(4L, "Sophie", "Martin"), true, true, true, 2,
                         List.of(new LessonParticipantResponseDto(9L, "Emma", "Girard", 4,
                                         new AssignedHorseResponseDto(1L, "Tornado")),
                                 new LessonParticipantResponseDto(10L, "Lucas", "Bonnet", 5, null)))));
@@ -90,7 +92,7 @@ class LessonControllerTest {
     @Test
     @WithMockUser(username = MARC, authorities = "COACH")
     void getLessonsOfWeekTakesTheCoachFromTheSessionAndIgnoresAnyCoachParameter() throws Exception {
-        when(lessonService.getLessonsOfWeekForCoach(MARC, WEEK)).thenReturn(List.of());
+        when(lessonService.getLessonsOfWeek(MARC, WEEK)).thenReturn(List.of());
 
         mockMvc.perform(get("/lessons")
                         .param("weekStart", "2026-10-12")
@@ -98,8 +100,8 @@ class LessonControllerTest {
                         .param("email", SOPHIE))
                 .andExpect(status().isOk());
 
-        verify(lessonService).getLessonsOfWeekForCoach(MARC, WEEK);
-        verify(lessonService, never()).getLessonsOfWeekForCoach(eq(SOPHIE), any());
+        verify(lessonService).getLessonsOfWeek(MARC, WEEK);
+        verify(lessonService, never()).getLessonsOfWeek(eq(SOPHIE), any());
     }
 
     @Test
@@ -113,8 +115,75 @@ class LessonControllerTest {
 
     @Test
     @WithMockUser(username = "admin@horseco.test", authorities = "ADMIN")
-    void getLessonsOfWeekReturns403ForAnAdmin() throws Exception {
+    void getLessonsOfWeekIsOpenToAnAdmin() throws Exception {
+        when(lessonService.getLessonsOfWeek("admin@horseco.test", WEEK)).thenReturn(List.of());
+
         mockMvc.perform(get("/lessons").param("weekStart", "2026-10-12"))
+                .andExpect(status().isOk());
+
+        verify(lessonService).getLessonsOfWeek("admin@horseco.test", WEEK);
+    }
+
+    @Test
+    @WithMockUser(username = "admin@horseco.test", authorities = "ADMIN")
+    void generateLessonsReturnsTheNumberOfCreatedLessons() throws Exception {
+        LessonGenerationRequestDto request =
+                new LessonGenerationRequestDto(LocalDate.of(2026, 12, 31), LessonType.CSO, Location.CARRIERE);
+        when(lessonService.generateLessons(request)).thenReturn(
+                new LessonGenerationResponseDto(LocalDate.of(2026, 10, 31), LocalDate.of(2026, 12, 31), 63, 2, 480));
+
+        mockMvc.perform(post("/lessons/generation").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"untilDate\": \"2026-12-31\", \"topic\": \"CSO\", \"location\": \"CARRIERE\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.createdCount").value(63))
+                .andExpect(jsonPath("$.skippedCount").value(2))
+                .andExpect(jsonPath("$.bookingCount").value(480))
+                .andExpect(jsonPath("$.untilDate").value("2026-12-31"));
+    }
+
+    @Test
+    @WithMockUser(username = "admin@horseco.test", authorities = "ADMIN")
+    void generateLessonsReturns400WhenTheEndDateIsMissing() throws Exception {
+        mockMvc.perform(post("/lessons/generation").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"topic\": \"CSO\", \"location\": \"CARRIERE\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.untilDate").exists());
+
+        verifyNoInteractions(lessonService);
+    }
+
+    @Test
+    @WithMockUser(username = SOPHIE, authorities = "COACH")
+    void generateLessonsReturns403ForACoach() throws Exception {
+        mockMvc.perform(post("/lessons/generation").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"untilDate\": \"2026-12-31\", \"topic\": \"CSO\", \"location\": \"CARRIERE\"}"))
+                .andExpect(status().isForbidden());
+
+        verifyNoInteractions(lessonService);
+    }
+
+    @Test
+    @WithMockUser(username = "admin@horseco.test", authorities = "ADMIN")
+    void updateLessonReturnsTheLessonWithItsNewCoach() throws Exception {
+        LessonUpdateRequestDto request =
+                new LessonUpdateRequestDto(3L, Location.MANEGE, LessonType.TAP, LessonStatus.PREVUE);
+        when(lessonService.updateLesson("admin@horseco.test", 4L, request)).thenReturn(
+                new LessonResponseDto(4L, 4L, LocalDateTime.of(2026, 10, 14, 17, 0),
+                        LocalDateTime.of(2026, 10, 14, 18, 0), Location.MANEGE, LessonType.TAP, LessonStatus.PREVUE,
+                        new CoachResponseDto(3L, "Marc", "Lefèvre"), false, true, false, 0, List.of()));
+
+        mockMvc.perform(put("/lessons/4").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"coachId\": 3, \"location\": \"MANEGE\", \"topic\": \"TAP\", \"status\": \"PREVUE\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.coach.firstName").value("Marc"))
+                .andExpect(jsonPath("$.editable").value(true));
+    }
+
+    @Test
+    @WithMockUser(username = SOPHIE, authorities = "COACH")
+    void updateLessonReturns403ForACoach() throws Exception {
+        mockMvc.perform(put("/lessons/4").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"coachId\": 3, \"location\": \"MANEGE\", \"topic\": \"TAP\", \"status\": \"PREVUE\"}"))
                 .andExpect(status().isForbidden());
 
         verifyNoInteractions(lessonService);
@@ -150,7 +219,7 @@ class LessonControllerTest {
     @Test
     @WithMockUser(username = SOPHIE, authorities = "COACH")
     void getLessonsOfWeekReturns400WhenWeekStartIsNotAMonday() throws Exception {
-        when(lessonService.getLessonsOfWeekForCoach(anyString(), any()))
+        when(lessonService.getLessonsOfWeek(anyString(), any()))
                 .thenThrow(new IllegalArgumentException("weekStart must be a Monday"));
 
         mockMvc.perform(get("/lessons").param("weekStart", "2026-10-14"))
@@ -273,7 +342,7 @@ class LessonControllerTest {
     private static LessonResponseDto ownLesson(LessonType topic, AssignedHorseResponseDto horse) {
         return new LessonResponseDto(4L, 4L, LocalDateTime.of(2026, 10, 14, 17, 0),
                 LocalDateTime.of(2026, 10, 14, 18, 0), Location.CARRIERE, topic, LessonStatus.PREVUE,
-                new CoachResponseDto(4L, "Sophie", "Martin"), true, false, 1,
+                new CoachResponseDto(4L, "Sophie", "Martin"), true, true, false, 1,
                 List.of(new LessonParticipantResponseDto(9L, "Emma", "Girard", 4, horse)));
     }
 }

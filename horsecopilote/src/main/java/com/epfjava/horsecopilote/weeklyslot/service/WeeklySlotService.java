@@ -51,6 +51,13 @@ public class WeeklySlotService {
                 .toList();
     }
 
+    /** Every slot with its coach, for the services that plan lessons from them. */
+    public List<WeeklySlot> getSlotEntities() {
+        return weeklySlotRepository.findAllWithInstructorBy().stream()
+                .sorted(PLANNING_ORDER)
+                .toList();
+    }
+
     public WeeklySlotResponseDto getSlot(Long id) {
         return weeklySlotMapper.toResponse(findSlotOrThrow(id));
     }

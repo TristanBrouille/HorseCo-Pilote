@@ -79,6 +79,21 @@ public class Lesson {
         this.topic = topic;
     }
 
+    /** Admin edit of the whole lesson; cancelling it releases its horses (R9). */
+    public void update(User instructor, Location location, LessonType topic, LessonStatus status) {
+        this.instructor = instructor;
+        this.location = location;
+        this.topic = topic;
+        this.status = status;
+        if (status == LessonStatus.ANNULEE) {
+            bookings.forEach(LessonBooking::unassignHorse);
+        }
+    }
+
+    public boolean isFromSlot(WeeklySlot slot) {
+        return weeklySlot != null && weeklySlot.getId().equals(slot.getId());
+    }
+
     public boolean isGivenBy(User coach) {
         return instructor.getId().equals(coach.getId());
     }
