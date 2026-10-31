@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="8ca3d6a0-3633-45bf-9b88-bb1580b43850" name="Changes" comment="corrections" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;ValentineH5&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/TristanBrouille/HorseCo-Pilote.git&quot;,
+    &quot;accountId&quot;: &quot;d2f04802-b991-4d05-911f-83dec319d916&quot;
+  }
+}</component>
+  <component name="NextEditCompletionFeaturesState">
+    <decayedCancelled>
+      <entry key="MS100" value="1.0" />
+      <entry key="MS500" value="1.0003177104139263" />
+      <entry key="S2" value="1.1335081760059813" />
+      <entry key="S5" value="1.4468926688964538" />
+      <entry key="S10" value="1.668812981211007" />
+      <entry key="S30" value="1.9838843399478252" />
+      <entry key="S60" value="2.6852938961503563" />
+      <entry key="M2" value="4.9123638545347195" />
+      <entry key="M5" value="11.046674537417738" />
+      <entry key="M10" value="16.1631562449325" />
+      <entry key="M15" value="18.790624499850406" />
+      <entry key="M30" value="24.837251594457708" />
+      <entry key="H1" value="36.30215081047675" />
+      <entry key="H2" value="50.16904509388253" />
+      <entry key="H4" value="61.36050036672636" />
+      <entry key="D1" value="74.01425934556164" />
+      <entry key="W1" value="76.56309728091543" />
+    </decayedCancelled>
+    <decayedSelected>
+      <entry key="MS100" value="0.0" />
+      <entry key="MS500" value="0.0" />
+      <entry key="S2" value="0.0" />
+      <entry key="S5" value="0.0" />
+      <entry key="S10" value="2.8544311455534885E-203" />
+      <entry key="S30" value="3.056139615371466E-68" />
+      <entry key="S60" value="1.7481818027228948E-34" />
+      <entry key="M2" value="1.3221882629651859E-17" />
+      <entry key="M5" value="1.7722187172948254E-7" />
+      <entry key="M10" value="4.2097728172608404E-4" />
+      <entry key="M15" value="0.0056170174492898494" />
+      <entry key="M30" value="0.07494676410152643" />
+      <entry key="H1" value="0.2737640664907037" />
+      <entry key="H2" value="0.5232246806972165" />
+      <entry key="H4" value="0.7233427131707458" />
+      <entry key="D1" value="0.9474522943345004" />
+      <entry key="W1" value="0.9923184135948677" />
+    </decayedSelected>
+    <decayedShown>
+      <entry key="MS100" value="0.4632940309451854" />
+      <entry key="MS500" value="0.857655704089733" />
+      <entry key="S2" value="1.0915793387829829" />
+      <entry key="S5" value="1.4259591550096238" />
+      <entry key="S10" value="1.6568988834751586" />
+      <entry key="S30" value="1.9792677068722375" />
+      <entry key="S60" value="2.681050316532795" />
+      <entry key="M2" value="4.905430336568322" />
+      <entry key="M5" value="11.037606167000575" />
+      <entry key="M10" value="16.156124947629266" />
+      <entry key="M15" value="18.79025192003269" />
+      <entry key="M30" value="24.908195332877714" />
+      <entry key="H1" value="36.573113484708124" />
+      <entry key="H2" value="50.690415618067235" />
+      <entry key="H4" value="62.08273758000197" />
+      <entry key="D1" value="74.96149423304155" />
+      <entry key="W1" value="77.55538368869011" />
+    </decayedShown>
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 8,
+  &quot;fromUser&quot;: false
+}</component>
+  <component name="ProjectId" id="3KJObnEMT6nL9RU5N8h7dPsNe38" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
+    "git-widget-placeholder": "7-etq-membre-je-veux-consulter-mes-réservations",
+    "ignore.virus.scanning.warn.message": "true",
+    "junie.onboarding.icon.badge.shown": "true",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "C:/00_Donees/0_EPF/Java/Projet App Chevaux/HorseCo-Pilote/horsecopilote/src/main/java/com/epfjava/horsecopilote/reservations",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.jshint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.jshint": "",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "to.speed.mode.migration.done": "true"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\00_Donees\0_EPF\Java\Projet App Chevaux\HorseCo-Pilote\horsecopilote\src\main\java\com\epfjava\horsecopilote\reservations" />
+      <recent name="C:\00_Donees\0_EPF\Java\Projet App Chevaux\HorseCo-Pilote\horsecopilote\src\main\java\com\epfjava\horsecopilote\reservations\service" />
+      <recent name="C:\00_Donees\0_EPF\Java\Projet App Chevaux\HorseCo-Pilote\horsecopilote\src\main\java\com\epfjava\horsecopilote\reservations\repository" />
+      <recent name="C:\00_Donees\0_EPF\Java\Projet App Chevaux\HorseCo-Pilote\horsecopilote\src\main\java\com\epfjava\horsecopilote\reservations\presentation" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\00_Donees\0_EPF\Java\Projet App Chevaux\HorseCo-Pilote\horsecopilote\src\main\java\com\epfjava\horsecopilote" />
+    </key>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-30f59d01ecdd-a203e0a19954-intellij.indexing.shared.core-IU-262.10968.63" />
+        <option value="bundled-js-predefined-d6986cc7102b-4abd2a77f808-JavaScript-IU-262.10968.63" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="8ca3d6a0-3633-45bf-9b88-bb1580b43850" name="Changes" comment="" />
+      <created>1791272277332</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1791272277332</updated>
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="creation reservation" />
+    <MESSAGE value="correction fichiers reservation" />
+    <MESSAGE value="correction packages" />
+    <MESSAGE value="correction noms" />
+    <MESSAGE value="correction imports" />
+    <MESSAGE value="corrections" />
+    <option name="LAST_COMMIT_MESSAGE" value="corrections" />
+  </component>
+</project>

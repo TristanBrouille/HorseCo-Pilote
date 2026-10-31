@@ -41,4 +41,12 @@ public class LessonBooking {
         this.member = member;
         this.horse = horse;
     }
+
+    public void assignHorse(Horse horse) {
+        this.horse = horse;
+    }
+
+    public void unassignHorse() {
+        this.horse = null;
+    }
 }

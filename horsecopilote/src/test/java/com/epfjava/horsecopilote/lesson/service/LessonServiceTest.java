@@ -1,8 +1,16 @@
 package com.epfjava.horsecopilote.lesson.service;
 
+import com.epfjava.horsecopilote.common.service.BusinessRuleException;
 import com.epfjava.horsecopilote.common.service.ResourceNotFoundException;
+import com.epfjava.horsecopilote.horse.repository.Horse;
+import com.epfjava.horsecopilote.horse.repository.HorseStatus;
 import com.epfjava.horsecopilote.horse.repository.Location;
+import com.epfjava.horsecopilote.horse.service.HorseService;
+import com.epfjava.horsecopilote.lesson.presentation.HorseAssignmentRequestDto;
+import com.epfjava.horsecopilote.lesson.presentation.HorseOptionResponseDto;
+import com.epfjava.horsecopilote.lesson.presentation.HorseUnavailabilityReason;
 import com.epfjava.horsecopilote.lesson.presentation.LessonResponseDto;
+import com.epfjava.horsecopilote.lesson.presentation.LessonTopicRequestDto;
 import com.epfjava.horsecopilote.lesson.repository.Lesson;
 import com.epfjava.horsecopilote.lesson.repository.LessonBooking;
 import com.epfjava.horsecopilote.lesson.repository.LessonRepository;
@@ -18,11 +26,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -45,6 +55,9 @@ class LessonServiceTest {
 
     @Mock
     private UserService userService;
+
+    @Mock
+    private HorseService horseService;
 
     @Spy
     private LessonMapper lessonMapper = new LessonMapperImpl(new CoachMapperImpl());
@@ -138,6 +151,159 @@ class LessonServiceTest {
         assertThatThrownBy(() -> lessonService.getLessonsOfWeekForCoach("lea@example.com", MONDAY))
                 .isInstanceOf(ResourceNotFoundException.class);
         verifyNoInteractions(lessonRepository);
+    }
+
+    @Test
+    void updateTopicChangesTheTopicOfAnOwnPlannedLesson() {
+        Lesson own = lesson(4L, sophie, LessonFixtures.WEDNESDAY_17H, LessonStatus.PREVUE);
+        givenOwnLesson(own);
+
+        LessonResponseDto result = lessonService.updateTopic(SOPHIE_EMAIL, 4L,
+                new LessonTopicRequestDto(LessonType.DRESS));
+
+        assertThat(own.getTopic()).isEqualTo(LessonType.DRESS);
+        assertThat(result.topic()).isEqualTo(LessonType.DRESS);
+        assertThat(result.mine()).isTrue();
+    }
+
+    @Test
+    void updateTopicRefusesALessonGivenByAnotherCoach() {
+        Lesson other = lesson(3L, marc, LessonFixtures.WEDNESDAY_17H, LessonStatus.PREVUE);
+        when(userService.getCoachByEmail(SOPHIE_EMAIL)).thenReturn(sophie);
+        when(lessonRepository.findWithParticipantsById(3L)).thenReturn(Optional.of(other));
+
+        assertThatThrownBy(() -> lessonService.updateTopic(SOPHIE_EMAIL, 3L,
+                new LessonTopicRequestDto(LessonType.DRESS)))
+                .isInstanceOf(AccessDeniedException.class);
+        assertThat(other.getTopic()).isEqualTo(LessonType.CSO);
+    }
+
+    @Test
+    void updateTopicRefusesACancelledLesson() {
+        Lesson cancelled = lesson(4L, sophie, LessonFixtures.WEDNESDAY_17H, LessonStatus.ANNULEE);
+        when(userService.getCoachByEmail(SOPHIE_EMAIL)).thenReturn(sophie);
+        when(lessonRepository.findWithParticipantsById(4L)).thenReturn(Optional.of(cancelled));
+
+        assertThatThrownBy(() -> lessonService.updateTopic(SOPHIE_EMAIL, 4L,
+                new LessonTopicRequestDto(LessonType.DRESS)))
+                .isInstanceOf(BusinessRuleException.class);
+    }
+
+    @Test
+    void updateTopicThrowsWhenTheLessonDoesNotExist() {
+        when(userService.getCoachByEmail(SOPHIE_EMAIL)).thenReturn(sophie);
+        when(lessonRepository.findWithParticipantsById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> lessonService.updateTopic(SOPHIE_EMAIL, 99L,
+                new LessonTopicRequestDto(LessonType.DRESS)))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void assignHorseGivesASelectableHorseToTheParticipant() {
+        Lesson own = lesson(4L, sophie, LessonFixtures.WEDNESDAY_17H, LessonStatus.PREVUE);
+        LessonBooking booking = LessonFixtures.booking(40L, own, LessonFixtures.member(9L, 4, "60.00"), null);
+        Horse tornado = LessonFixtures.availableHorse(1L, "Tornado");
+        givenOwnLesson(own);
+        when(horseService.getHorseEntity(1L)).thenReturn(tornado);
+        when(lessonRepository.findHorseBookingsBetween(
+                LocalDateTime.of(2026, 10, 14, 0, 0), LocalDateTime.of(2026, 10, 15, 0, 0)))
+                .thenReturn(List.of());
+
+        LessonResponseDto result = lessonService.assignHorse(SOPHIE_EMAIL, 4L, 9L,
+                new HorseAssignmentRequestDto(1L));
+
+        assertThat(booking.getHorse()).isSameAs(tornado);
+        assertThat(result.participants()).extracting(p -> p.horse().name()).containsExactly("Tornado");
+    }
+
+    @Test
+    void assignHorseRefusesAHorseThatBreaksARule() {
+        Lesson own = lesson(4L, sophie, LessonFixtures.WEDNESDAY_17H, LessonStatus.PREVUE);
+        LessonBooking booking = LessonFixtures.booking(40L, own, LessonFixtures.member(9L, 2, "60.00"), null);
+        Horse rubis = LessonFixtures.horse(5L, "Rubis", 620, 2, HorseStatus.DISPONIBLE, 5);
+        when(userService.getCoachByEmail(SOPHIE_EMAIL)).thenReturn(sophie);
+        when(lessonRepository.findWithParticipantsById(4L)).thenReturn(Optional.of(own));
+        when(horseService.getHorseEntity(5L)).thenReturn(rubis);
+        when(lessonRepository.findHorseBookingsBetween(any(), any())).thenReturn(List.of());
+
+        assertThatThrownBy(() -> lessonService.assignHorse(SOPHIE_EMAIL, 4L, 9L, new HorseAssignmentRequestDto(5L)))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessage("The rider's level is below the level required by Rubis");
+        assertThat(booking.getHorse()).isNull();
+    }
+
+    @Test
+    void assignHorseThrowsWhenTheMemberIsNotAParticipant() {
+        Lesson own = lesson(4L, sophie, LessonFixtures.WEDNESDAY_17H, LessonStatus.PREVUE);
+        when(userService.getCoachByEmail(SOPHIE_EMAIL)).thenReturn(sophie);
+        when(lessonRepository.findWithParticipantsById(4L)).thenReturn(Optional.of(own));
+
+        assertThatThrownBy(() -> lessonService.assignHorse(SOPHIE_EMAIL, 4L, 9L, new HorseAssignmentRequestDto(1L)))
+                .isInstanceOf(ResourceNotFoundException.class);
+        verifyNoInteractions(horseService);
+    }
+
+    @Test
+    void assignHorseRefusesALessonGivenByAnotherCoach() {
+        Lesson other = lesson(3L, marc, LessonFixtures.WEDNESDAY_17H, LessonStatus.PREVUE);
+        LessonFixtures.booking(30L, other, LessonFixtures.member(9L, 4, "60.00"), null);
+        when(userService.getCoachByEmail(SOPHIE_EMAIL)).thenReturn(sophie);
+        when(lessonRepository.findWithParticipantsById(3L)).thenReturn(Optional.of(other));
+
+        assertThatThrownBy(() -> lessonService.assignHorse(SOPHIE_EMAIL, 3L, 9L, new HorseAssignmentRequestDto(1L)))
+                .isInstanceOf(AccessDeniedException.class);
+        verifyNoInteractions(horseService);
+    }
+
+    @Test
+    void unassignHorseRemovesTheHorseOfTheParticipant() {
+        Lesson own = lesson(4L, sophie, LessonFixtures.WEDNESDAY_17H, LessonStatus.PREVUE);
+        LessonBooking booking = LessonFixtures.booking(40L, own, LessonFixtures.member(9L, 4, "60.00"),
+                LessonFixtures.availableHorse(1L, "Tornado"));
+        givenOwnLesson(own);
+
+        LessonResponseDto result = lessonService.unassignHorse(SOPHIE_EMAIL, 4L, 9L);
+
+        assertThat(booking.getHorse()).isNull();
+        assertThat(result.participants().getFirst().horse()).isNull();
+    }
+
+    @Test
+    void getHorseOptionsListsSelectableHorsesFirstWithTheirReason() {
+        Lesson own = lesson(4L, sophie, LessonFixtures.WEDNESDAY_17H, LessonStatus.PREVUE);
+        Horse tornado = LessonFixtures.availableHorse(1L, "Tornado");
+        LessonFixtures.booking(40L, own, LessonFixtures.member(9L, 4, "60.00"), tornado);
+        Horse ulysse = LessonFixtures.horse(6L, "Ulysse", 540, 3, HorseStatus.REPOS, 1);
+        Horse caramel = LessonFixtures.availableHorse(2L, "Caramel");
+        when(userService.getCoachByEmail(SOPHIE_EMAIL)).thenReturn(sophie);
+        when(lessonRepository.findWithParticipantsById(4L)).thenReturn(Optional.of(own));
+        when(horseService.getHorsesSortedByName()).thenReturn(List.of(caramel, tornado, ulysse));
+        when(lessonRepository.findHorseBookingsBetween(any(), any())).thenReturn(own.getBookings());
+
+        List<HorseOptionResponseDto> options = lessonService.getHorseOptions(SOPHIE_EMAIL, 4L, 9L);
+
+        assertThat(options).extracting(HorseOptionResponseDto::name).containsExactly("Caramel", "Tornado", "Ulysse");
+        assertThat(options).extracting(HorseOptionResponseDto::selectable).containsExactly(true, true, false);
+        assertThat(options).extracting(HorseOptionResponseDto::assigned).containsExactly(false, true, false);
+        assertThat(options).extracting(HorseOptionResponseDto::hoursToday).containsExactly(0, 1, 0);
+        assertThat(options.get(2).reason()).isEqualTo(HorseUnavailabilityReason.STATUS);
+    }
+
+    @Test
+    void getHorseOptionsRefusesALessonGivenByAnotherCoach() {
+        Lesson other = lesson(3L, marc, LessonFixtures.WEDNESDAY_17H, LessonStatus.PREVUE);
+        when(userService.getCoachByEmail(SOPHIE_EMAIL)).thenReturn(sophie);
+        when(lessonRepository.findWithParticipantsById(3L)).thenReturn(Optional.of(other));
+
+        assertThatThrownBy(() -> lessonService.getHorseOptions(SOPHIE_EMAIL, 3L, 9L))
+                .isInstanceOf(AccessDeniedException.class);
+    }
+
+    private void givenOwnLesson(Lesson lesson) {
+        when(userService.getCoachByEmail(SOPHIE_EMAIL)).thenReturn(sophie);
+        when(lessonRepository.findWithParticipantsById(lesson.getId())).thenReturn(Optional.of(lesson));
+        when(lessonRepository.findIdsWithPendingMembers(List.of(lesson.getId()))).thenReturn(Set.of());
     }
 
     private Lesson lesson(Long id, User coach, LocalDateTime start, LessonStatus status) {
