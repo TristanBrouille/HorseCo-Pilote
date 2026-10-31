@@ -49,6 +49,7 @@ class LessonControllerTest {
     private static final String SOPHIE = "sophie.martin@horseco.test";
     private static final String MARC = "marc.lefevre@horseco.test";
     private static final LocalDate WEEK = LocalDate.of(2026, 10, 12);
+    private static final String DETAILS = "{\"topic\": \"DRESS\", \"location\": \"CARRIERE\"}";
 
     @Autowired
     private MockMvc mockMvc;
@@ -128,12 +129,12 @@ class LessonControllerTest {
     @WithMockUser(username = "admin@horseco.test", authorities = "ADMIN")
     void generateLessonsReturnsTheNumberOfCreatedLessons() throws Exception {
         LessonGenerationRequestDto request =
-                new LessonGenerationRequestDto(LocalDate.of(2026, 12, 31), LessonType.CSO, Location.CARRIERE);
+                new LessonGenerationRequestDto(LocalDate.of(2026, 12, 31));
         when(lessonService.generateLessons(request)).thenReturn(
                 new LessonGenerationResponseDto(LocalDate.of(2026, 10, 31), LocalDate.of(2026, 12, 31), 63, 2, 480));
 
         mockMvc.perform(post("/lessons/generation").contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"untilDate\": \"2026-12-31\", \"topic\": \"CSO\", \"location\": \"CARRIERE\"}"))
+                        .content("{\"untilDate\": \"2026-12-31\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.createdCount").value(63))
                 .andExpect(jsonPath("$.skippedCount").value(2))
@@ -145,7 +146,7 @@ class LessonControllerTest {
     @WithMockUser(username = "admin@horseco.test", authorities = "ADMIN")
     void generateLessonsReturns400WhenTheEndDateIsMissing() throws Exception {
         mockMvc.perform(post("/lessons/generation").contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"topic\": \"CSO\", \"location\": \"CARRIERE\"}"))
+                        .content("{}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errors.untilDate").exists());
 
@@ -156,7 +157,7 @@ class LessonControllerTest {
     @WithMockUser(username = SOPHIE, authorities = "COACH")
     void generateLessonsReturns403ForACoach() throws Exception {
         mockMvc.perform(post("/lessons/generation").contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"untilDate\": \"2026-12-31\", \"topic\": \"CSO\", \"location\": \"CARRIERE\"}"))
+                        .content("{\"untilDate\": \"2026-12-31\"}"))
                 .andExpect(status().isForbidden());
 
         verifyNoInteractions(lessonService);
@@ -177,6 +178,22 @@ class LessonControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.coach.firstName").value("Marc"))
                 .andExpect(jsonPath("$.editable").value(true));
+    }
+
+    @Test
+    @WithMockUser(username = "admin@horseco.test", authorities = "ADMIN")
+    void updateLessonAcceptsAnEmptyTopicAndLocation() throws Exception {
+        LessonUpdateRequestDto request = new LessonUpdateRequestDto(3L, null, null, LessonStatus.PREVUE);
+        when(lessonService.updateLesson("admin@horseco.test", 4L, request)).thenReturn(
+                new LessonResponseDto(4L, 4L, LocalDateTime.of(2026, 10, 14, 17, 0),
+                        LocalDateTime.of(2026, 10, 14, 18, 0), null, null, LessonStatus.PREVUE,
+                        new CoachResponseDto(3L, "Marc", "Lefèvre"), false, true, false, 0, List.of()));
+
+        mockMvc.perform(put("/lessons/4").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"coachId\": 3, \"status\": \"PREVUE\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.topic").value(nullValue()))
+                .andExpect(jsonPath("$.location").value(nullValue()));
     }
 
     @Test
@@ -229,39 +246,41 @@ class LessonControllerTest {
 
     @Test
     @WithMockUser(username = SOPHIE, authorities = "COACH")
-    void updateTopicReturnsTheUpdatedLesson() throws Exception {
-        when(lessonService.updateTopic(SOPHIE, 4L, new LessonTopicRequestDto(LessonType.DRESS)))
+    void updateDetailsReturnsTheUpdatedLesson() throws Exception {
+        when(lessonService.updateDetails(SOPHIE, 4L, new LessonDetailsRequestDto(LessonType.DRESS, Location.CARRIERE)))
                 .thenReturn(ownLesson(LessonType.DRESS, null));
 
-        mockMvc.perform(patch("/lessons/4").contentType(MediaType.APPLICATION_JSON).content("{\"topic\": \"DRESS\"}"))
+        mockMvc.perform(patch("/lessons/4").contentType(MediaType.APPLICATION_JSON).content(DETAILS))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.topic").value("DRESS"));
+                .andExpect(jsonPath("$.topic").value("DRESS"))
+                .andExpect(jsonPath("$.location").value("CARRIERE"));
     }
 
     @Test
     @WithMockUser(username = SOPHIE, authorities = "COACH")
-    void updateTopicReturns400WhenTopicIsMissing() throws Exception {
+    void updateDetailsReturns400WhenTopicOrLocationIsMissing() throws Exception {
         mockMvc.perform(patch("/lessons/4").contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.errors.topic").exists());
+                .andExpect(jsonPath("$.errors.topic").exists())
+                .andExpect(jsonPath("$.errors.location").exists());
 
         verifyNoInteractions(lessonService);
     }
 
     @Test
     @WithMockUser(username = SOPHIE, authorities = "COACH")
-    void updateTopicReturns403WhenTheLessonIsGivenByAnotherCoach() throws Exception {
-        when(lessonService.updateTopic(eq(SOPHIE), eq(3L), any()))
+    void updateDetailsReturns403WhenTheLessonIsGivenByAnotherCoach() throws Exception {
+        when(lessonService.updateDetails(eq(SOPHIE), eq(3L), any()))
                 .thenThrow(new AccessDeniedException("Lesson 3 is given by another coach"));
 
-        mockMvc.perform(patch("/lessons/3").contentType(MediaType.APPLICATION_JSON).content("{\"topic\": \"DRESS\"}"))
+        mockMvc.perform(patch("/lessons/3").contentType(MediaType.APPLICATION_JSON).content(DETAILS))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     @WithMockUser(username = "lea.petit@horseco.test", authorities = "MEMBRE")
-    void updateTopicReturns403ForAMember() throws Exception {
-        mockMvc.perform(patch("/lessons/4").contentType(MediaType.APPLICATION_JSON).content("{\"topic\": \"DRESS\"}"))
+    void updateDetailsReturns403ForAMember() throws Exception {
+        mockMvc.perform(patch("/lessons/4").contentType(MediaType.APPLICATION_JSON).content(DETAILS))
                 .andExpect(status().isForbidden());
 
         verifyNoInteractions(lessonService);

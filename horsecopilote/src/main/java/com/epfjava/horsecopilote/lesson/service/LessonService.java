@@ -10,7 +10,7 @@ import com.epfjava.horsecopilote.lesson.presentation.HorseUnavailabilityReason;
 import com.epfjava.horsecopilote.lesson.presentation.LessonGenerationRequestDto;
 import com.epfjava.horsecopilote.lesson.presentation.LessonGenerationResponseDto;
 import com.epfjava.horsecopilote.lesson.presentation.LessonResponseDto;
-import com.epfjava.horsecopilote.lesson.presentation.LessonTopicRequestDto;
+import com.epfjava.horsecopilote.lesson.presentation.LessonDetailsRequestDto;
 import com.epfjava.horsecopilote.lesson.presentation.LessonUpdateRequestDto;
 import com.epfjava.horsecopilote.lesson.repository.Lesson;
 import com.epfjava.horsecopilote.lesson.repository.LessonBooking;
@@ -122,10 +122,10 @@ public class LessonService {
     }
 
     @Transactional
-    public LessonResponseDto updateTopic(String userEmail, Long lessonId, LessonTopicRequestDto request) {
+    public LessonResponseDto updateDetails(String userEmail, Long lessonId, LessonDetailsRequestDto request) {
         User viewer = userService.getStaffByEmail(userEmail);
         Lesson lesson = findEditablePlannedLesson(viewer, lessonId);
-        lesson.changeTopic(request.topic());
+        lesson.changeDetails(request.topic(), request.location());
         return toEditedLessonResponse(viewer, lesson);
     }
 
@@ -176,8 +176,8 @@ public class LessonService {
                 if (!start.isAfter(now)) {
                     continue;
                 }
-                Lesson candidate = new Lesson(slot, slot.getInstructor(), request.location(), start,
-                        request.topic(), LessonStatus.PREVUE);
+                // topic and location stay empty: the coach defines them
+                Lesson candidate = new Lesson(slot, slot.getInstructor(), null, start, null, LessonStatus.PREVUE);
                 if (planned.stream().anyMatch(other -> conflicts(other, candidate, slot))) {
                     skipped++;
                 } else {

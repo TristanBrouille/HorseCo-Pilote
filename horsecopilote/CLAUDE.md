@@ -53,7 +53,7 @@ Trois rôles uniquement (colonne `users.role`, enum `Roles`) :
 1. **L'admin crée les créneaux hebdomadaires** (`weekly_slot`) : un horaire fixe d'**1 heure** dans la semaine (jour + heure de début), avec un coach, un niveau requis et une capacité maximale de 12. Il peut les modifier.
 2. **Le membre s'inscrit à un créneau** (`weekly_slot_member`), pas à une leçon. L'inscription est **valable un an**. Pour l'instant, **pas de désinscription**.
 3. **Chaque semaine, le coach crée la leçon** (`lesson`) de chacun de ses créneaux, avec son type (`topic`) et son lieu.
-4. **Génération des leçons par l'admin** (`POST /lessons/generation`, bouton sur l'écran des créneaux) : les leçons de tous les créneaux sont créées jusqu'à une date choisie, et les membres inscrits au créneau y sont **ajoutés directement** (un `lesson_booking` par inscrit, sans validation préalable).
+4. **Génération des leçons par l'admin** (`POST /lessons/generation`, bouton sur l'écran des créneaux) : les leçons de tous les créneaux sont créées jusqu'à une date choisie, et les membres inscrits au créneau y sont **ajoutés directement** (un `lesson_booking` par inscrit, sans validation préalable). Le sujet (`topic`) et le lieu (`location`) restent **vides (NULL)** : c'est le coach de la leçon qui les définit (`PATCH /lessons/{id}`).
 5. **Le coach attribue un cheval** à chaque membre validé (`lesson_booking.horse_id`).
 6. **Inscription tardive** : si un membre s'inscrit à un créneau alors que la leçon de la semaine est déjà créée, la leçon est **affichée en surbrillance dans l'agenda** du coach, pour qu'il valide ce membre et lui attribue un cheval.
 7. **Fin d'inscription** : au bout d'un an, le membre est **désinscrit automatiquement** du créneau (tâche planifiée côté back).

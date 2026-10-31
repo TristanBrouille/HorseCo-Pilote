@@ -59,10 +59,10 @@ public class LessonController {
 
     @PreAuthorize(COACH_OR_ADMIN)
     @PatchMapping("/{lessonId}")
-    public ResponseEntity<LessonResponseDto> updateTopic(@PathVariable Long lessonId,
-                                                         @Valid @RequestBody LessonTopicRequestDto request,
-                                                         Authentication authentication) {
-        return ResponseEntity.ok(lessonService.updateTopic(authentication.getName(), lessonId, request));
+    public ResponseEntity<LessonResponseDto> updateDetails(@PathVariable Long lessonId,
+                                                           @Valid @RequestBody LessonDetailsRequestDto request,
+                                                           Authentication authentication) {
+        return ResponseEntity.ok(lessonService.updateDetails(authentication.getName(), lessonId, request));
     }
 
     @PreAuthorize(COACH_OR_ADMIN)

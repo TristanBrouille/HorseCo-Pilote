@@ -5,10 +5,11 @@ import com.epfjava.horsecopilote.lesson.repository.LessonStatus;
 import com.epfjava.horsecopilote.lesson.repository.LessonType;
 import jakarta.validation.constraints.NotNull;
 
+/** location and topic may stay null: the coach of the lesson defines them. */
 public record LessonUpdateRequestDto(
         @NotNull Long coachId,
-        @NotNull Location location,
-        @NotNull LessonType topic,
+        Location location,
+        LessonType topic,
         @NotNull LessonStatus status
 ) {
 }
