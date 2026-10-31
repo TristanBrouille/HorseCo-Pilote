@@ -30,6 +30,14 @@ public class HorseService {
                 .toList();
     }
 
+    public List<Horse> getHorsesSortedByName() {
+        return horseRepository.findAll(Sort.by("name"));
+    }
+
+    public Horse getHorseEntity(Long id) {
+        return findHorseOrThrow(id);
+    }
+
     public HorseResponseDto getHorse(Long id) {
         return horseMapper.toResponse(findHorseOrThrow(id));
     }
